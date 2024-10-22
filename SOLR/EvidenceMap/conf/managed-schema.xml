@@ -1,0 +1,797 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Solr managed schema - automatically generated - DO NOT EDIT -->
+<schema name="default-config" version="1.6">
+  <uniqueKey>doc_id</uniqueKey>
+  <fieldType name="_nest_path_" class="solr.NestPathField" maxCharsForDocValues="-1" omitNorms="true" omitTermFreqAndPositions="true" stored="false" multiValued="false"/>
+  <fieldType name="ancestor_path" class="solr.TextField">
+    <analyzer type="index">
+      <tokenizer name="keyword"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="pathHierarchy" delimiter="/"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="binary" class="solr.BinaryField"/>
+  <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+  <fieldType name="booleans" class="solr.BoolField" sortMissingLast="true" multiValued="true"/>
+  <fieldType name="delimited_payloads_float" class="solr.TextField" indexed="true" stored="false">
+    <analyzer>
+      <tokenizer name="whitespace"/>
+      <filter encoder="float" name="delimitedPayload"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="delimited_payloads_int" class="solr.TextField" indexed="true" stored="false">
+    <analyzer>
+      <tokenizer name="whitespace"/>
+      <filter encoder="integer" name="delimitedPayload"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="delimited_payloads_string" class="solr.TextField" indexed="true" stored="false">
+    <analyzer>
+      <tokenizer name="whitespace"/>
+      <filter encoder="identity" name="delimitedPayload"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="descendent_path" class="solr.TextField">
+    <analyzer type="index">
+      <tokenizer name="pathHierarchy" delimiter="/"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="keyword"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="ignored" class="solr.StrField" indexed="false" stored="false" multiValued="true"/>
+  <fieldType name="location" class="solr.LatLonPointSpatialField" docValues="true"/>
+  <fieldType name="location_rpt" class="solr.SpatialRecursivePrefixTreeFieldType" geo="true" maxDistErr="0.001" distErrPct="0.025" distanceUnits="kilometers"/>
+  <fieldType name="lowercase" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="keyword"/>
+      <filter name="lowercase"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="pdate" class="solr.DatePointField" docValues="true"/>
+  <fieldType name="pdates" class="solr.DatePointField" docValues="true" multiValued="true"/>
+  <fieldType name="pdouble" class="solr.DoublePointField" docValues="true"/>
+  <fieldType name="pdoubles" class="solr.DoublePointField" docValues="true" multiValued="true"/>
+  <fieldType name="pfloat" class="solr.FloatPointField" docValues="true"/>
+  <fieldType name="pfloats" class="solr.FloatPointField" docValues="true" multiValued="true"/>
+  <fieldType name="phonetic_en" class="solr.TextField" indexed="true" stored="false">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter inject="false" name="doubleMetaphone"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="pint" class="solr.IntPointField" docValues="true"/>
+  <fieldType name="pints" class="solr.IntPointField" docValues="true" multiValued="true"/>
+  <fieldType name="plong" class="solr.LongPointField" docValues="true"/>
+  <fieldType name="plongs" class="solr.LongPointField" docValues="true" multiValued="true"/>
+  <fieldType name="point" class="solr.PointType" subFieldSuffix="_d" dimension="2"/>
+  <fieldType name="random" class="solr.RandomSortField" indexed="true"/>
+  <fieldType name="rank" class="solr.RankField"/>
+  <fieldType name="string" class="solr.StrField" sortMissingLast="true" docValues="true"/>
+  <fieldType name="strings" class="solr.StrField" sortMissingLast="true" docValues="true" multiValued="true"/>
+  <fieldType name="text_ar" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_ar.txt" name="stop"/>
+      <filter name="arabicNormalization"/>
+      <filter name="arabicStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_bg" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_bg.txt" name="stop"/>
+      <filter name="bulgarianStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_ca" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" articles="lang/contractions_ca.txt" name="elision"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_ca.txt" name="stop"/>
+      <filter language="Catalan" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_cjk" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="CJKWidth"/>
+      <filter name="lowercase"/>
+      <filter name="CJKBigram"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_cz" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_cz.txt" name="stop"/>
+      <filter name="czechStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_da" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_da.txt" name="stop" format="snowball"/>
+      <filter language="Danish" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_de" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_de.txt" name="stop" format="snowball"/>
+      <filter name="germanNormalization"/>
+      <filter name="germanLightStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_el" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="greekLowercase"/>
+      <filter ignoreCase="false" words="lang/stopwords_el.txt" name="stop"/>
+      <filter name="greekStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" words="lang/stopwords_en.txt" name="stop"/>
+      <filter name="lowercase"/>
+      <filter name="englishPossessive"/>
+      <filter protected="protwords.txt" name="keywordMarker"/>
+      <filter name="porterStem"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" synonyms="synonyms.txt" name="synonymGraph" expand="true"/>
+      <filter ignoreCase="true" words="lang/stopwords_en.txt" name="stop"/>
+      <filter name="lowercase"/>
+      <filter name="englishPossessive"/>
+      <filter protected="protwords.txt" name="keywordMarker"/>
+      <filter name="porterStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_en_splitting" class="solr.TextField" autoGeneratePhraseQueries="true" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer name="whitespace"/>
+      <filter ignoreCase="true" words="lang/stopwords_en.txt" name="stop"/>
+      <filter catenateWords="1" generateNumberParts="1" generateWordParts="1" catenateAll="0" name="wordDelimiterGraph" splitOnCaseChange="1" catenateNumbers="1"/>
+      <filter name="lowercase"/>
+      <filter protected="protwords.txt" name="keywordMarker"/>
+      <filter name="porterStem"/>
+      <filter name="flattenGraph"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="whitespace"/>
+      <filter ignoreCase="true" synonyms="synonyms.txt" name="synonymGraph" expand="true"/>
+      <filter ignoreCase="true" words="lang/stopwords_en.txt" name="stop"/>
+      <filter catenateWords="0" generateNumberParts="1" generateWordParts="1" catenateAll="0" name="wordDelimiterGraph" splitOnCaseChange="1" catenateNumbers="0"/>
+      <filter name="lowercase"/>
+      <filter protected="protwords.txt" name="keywordMarker"/>
+      <filter name="porterStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_en_splitting_tight" class="solr.TextField" autoGeneratePhraseQueries="true" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer name="whitespace"/>
+      <filter ignoreCase="true" synonyms="synonyms.txt" name="synonymGraph" expand="false"/>
+      <filter ignoreCase="true" words="lang/stopwords_en.txt" name="stop"/>
+      <filter generateWordParts="0" catenateNumbers="1" catenateWords="1" name="wordDelimiterGraph" generateNumberParts="0" catenateAll="0"/>
+      <filter name="lowercase"/>
+      <filter protected="protwords.txt" name="keywordMarker"/>
+      <filter name="englishMinimalStem"/>
+      <filter name="removeDuplicates"/>
+      <filter name="flattenGraph"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="whitespace"/>
+      <filter ignoreCase="true" synonyms="synonyms.txt" name="synonymGraph" expand="false"/>
+      <filter ignoreCase="true" words="lang/stopwords_en.txt" name="stop"/>
+      <filter generateWordParts="0" catenateNumbers="1" catenateWords="1" name="wordDelimiterGraph" generateNumberParts="0" catenateAll="0"/>
+      <filter name="lowercase"/>
+      <filter protected="protwords.txt" name="keywordMarker"/>
+      <filter name="englishMinimalStem"/>
+      <filter name="removeDuplicates"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_es" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_es.txt" name="stop" format="snowball"/>
+      <filter name="spanishLightStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_et" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_et.txt" name="stop"/>
+      <filter language="Estonian" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_eu" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_eu.txt" name="stop"/>
+      <filter language="Basque" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_fa" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <charFilter name="persian"/>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter name="arabicNormalization"/>
+      <filter name="persianNormalization"/>
+      <filter ignoreCase="true" words="lang/stopwords_fa.txt" name="stop"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_fi" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_fi.txt" name="stop" format="snowball"/>
+      <filter language="Finnish" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_fr" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" articles="lang/contractions_fr.txt" name="elision"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_fr.txt" name="stop" format="snowball"/>
+      <filter name="frenchLightStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_ga" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" articles="lang/contractions_ga.txt" name="elision"/>
+      <filter ignoreCase="true" words="lang/hyphenations_ga.txt" name="stop"/>
+      <filter name="irishLowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_ga.txt" name="stop"/>
+      <filter language="Irish" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_gen_sort" class="solr.SortableTextField" positionIncrementGap="100" multiValued="true">
+    <analyzer type="index">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" words="stopwords.txt" name="stop"/>
+      <filter name="lowercase"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" words="stopwords.txt" name="stop"/>
+      <filter ignoreCase="true" synonyms="synonyms.txt" name="synonymGraph" expand="true"/>
+      <filter name="lowercase"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100" multiValued="true">
+    <analyzer type="index">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" words="stopwords.txt" name="stop"/>
+      <filter name="lowercase"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" words="stopwords.txt" name="stop"/>
+      <filter ignoreCase="true" synonyms="synonyms.txt" name="synonymGraph" expand="true"/>
+      <filter name="lowercase"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_general_rev" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" words="stopwords.txt" name="stop"/>
+      <filter name="lowercase"/>
+      <filter maxFractionAsterisk="0.33" name="reversedWildcard" maxPosQuestion="2" withOriginal="true" maxPosAsterisk="3"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" synonyms="synonyms.txt" name="synonymGraph" expand="true"/>
+      <filter ignoreCase="true" words="stopwords.txt" name="stop"/>
+      <filter name="lowercase"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_gl" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_gl.txt" name="stop"/>
+      <filter name="galicianStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_hi" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter name="indicNormalization"/>
+      <filter name="hindiNormalization"/>
+      <filter ignoreCase="true" words="lang/stopwords_hi.txt" name="stop"/>
+      <filter name="hindiStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_hu" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_hu.txt" name="stop" format="snowball"/>
+      <filter language="Hungarian" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_hy" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_hy.txt" name="stop"/>
+      <filter language="Armenian" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_id" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_id.txt" name="stop"/>
+      <filter stemDerivational="true" name="indonesianStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_it" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter ignoreCase="true" articles="lang/contractions_it.txt" name="elision"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_it.txt" name="stop" format="snowball"/>
+      <filter name="italianLightStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_ja" class="solr.TextField" autoGeneratePhraseQueries="false" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer mode="search" name="japanese"/>
+      <filter name="japaneseBaseForm"/>
+      <filter tags="lang/stoptags_ja.txt" name="japanesePartOfSpeechStop"/>
+      <filter name="cjkWidth"/>
+      <filter ignoreCase="true" words="lang/stopwords_ja.txt" name="stop"/>
+      <filter name="japaneseKatakanaStem" minimumLength="4"/>
+      <filter name="lowercase"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_ko" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer decompoundMode="discard" outputUnknownUnigrams="false" name="korean"/>
+      <filter name="koreanPartOfSpeechStop"/>
+      <filter name="koreanReadingForm"/>
+      <filter name="lowercase"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_lv" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_lv.txt" name="stop"/>
+      <filter name="latvianStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_nl" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_nl.txt" name="stop" format="snowball"/>
+      <filter ignoreCase="false" dictionary="lang/stemdict_nl.txt" name="stemmerOverride"/>
+      <filter language="Dutch" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_no" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_no.txt" name="stop" format="snowball"/>
+      <filter language="Norwegian" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_pt" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_pt.txt" name="stop" format="snowball"/>
+      <filter name="portugueseLightStem"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_ro" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_ro.txt" name="stop"/>
+      <filter language="Romanian" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_ru" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_ru.txt" name="stop" format="snowball"/>
+      <filter language="Russian" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_sv" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_sv.txt" name="stop" format="snowball"/>
+      <filter language="Swedish" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_th" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="thai"/>
+      <filter name="lowercase"/>
+      <filter ignoreCase="true" words="lang/stopwords_th.txt" name="stop"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_tr" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="standard"/>
+      <filter name="turkishLowercase"/>
+      <filter ignoreCase="false" words="lang/stopwords_tr.txt" name="stop"/>
+      <filter language="Turkish" name="snowballPorter"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_ws" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer name="whitespace"/>
+    </analyzer>
+  </fieldType>
+  <field name="Evidence_Map.Comparison_Results.Intervention" type="text_general"/>
+  <field name="Evidence_Map.Comparison_Results.Intervention_start" type="plongs"/>
+  <field name="Evidence_Map.Comparison_Results.Observation" type="text_general"/>
+  <field name="Evidence_Map.Comparison_Results.Observation_start" type="plongs"/>
+  <field name="Evidence_Map.Comparison_Results.Outcome" type="text_general"/>
+  <field name="Evidence_Map.Comparison_Results.Outcome_start" type="plongs"/>
+  <field name="Evidence_Map.Comparison_Results.negation" type="text_general"/>
+  <field name="Evidence_Map.Enrollment.end" type="plongs"/>
+  <field name="Evidence_Map.Enrollment.negation" type="text_general"/>
+  <field name="Evidence_Map.Enrollment.start" type="plongs"/>
+  <field name="Evidence_Map.Enrollment.term" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Count" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Count_start" type="plongs"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Intervention" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Intervention_start" type="plongs"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Observation" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Observation_start" type="plongs"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Outcome" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.Outcome_start" type="plongs"/>
+  <field name="Evidence_Map.Study_Arm_1_Results.negation" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_2_Results.Intervention" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_2_Results.Intervention_start" type="plongs"/>
+  <field name="Evidence_Map.Study_Arm_2_Results.Observation" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_2_Results.Observation_start" type="plongs"/>
+  <field name="Evidence_Map.Study_Arm_2_Results.Outcome" type="text_general"/>
+  <field name="Evidence_Map.Study_Arm_2_Results.Outcome_start" type="plongs"/>
+  <field name="Evidence_Map.Study_Arm_2_Results.negation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Count.end" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Count.negation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Count.negation_phrase" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Count.negation_position" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Count.start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Count.term" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Intervention.end" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Intervention.negation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Intervention.negation_phrase" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Intervention.negation_position" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Intervention.start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Intervention.term" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Observation.end" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Observation.negation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Observation.negation_phrase" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Observation.negation_position" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Observation.start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Observation.term" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Outcome.end" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Outcome.negation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Outcome.negation_phrase" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Outcome.negation_position" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Outcome.start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Outcome.term" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Participant.end" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Participant.negation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Participant.negation_phrase" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Participant.negation_position" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Participant.start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Elements.Participant.term" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Count" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Count_start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Intervention" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Intervention_start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Observation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Observation_start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Outcome" type="text_general"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.Outcome_start" type="plongs"/>
+  <field name="Sentence-level_breakdown.Evidence_Propositions.negation" type="text_general"/>
+  <field name="Sentence-level_breakdown.Section" type="text_general"/>
+  <field name="Sentence-level_breakdown.Text" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Intervention.UMLS" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Intervention.class" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Intervention.negation" type="booleans"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Intervention.start_index" type="plongs"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Intervention.term" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Ourcome.negation" type="booleans"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Ourcome.start_index" type="plongs"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Ourcome.term" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Outcome.UMLS" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Outcome.class" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Outcome.negation" type="booleans"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Outcome.start_index" type="plongs"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Outcome.term" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Participant.UMLS" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Participant.class" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Participant.negation" type="booleans"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Participant.start_index" type="plongs"/>
+  <field name="Sentences-level_Breakdown.Evidence_Elements.Participant.term" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Propositions.Count" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Propositions.Intervention" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Propositions.Observation" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Propositions.Outcome" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Propositions.Participant" type="text_general"/>
+  <field name="Sentences-level_Breakdown.Evidence_Propositions.negation" type="booleans"/>
+  <field name="Sentences-level_Breakdown.Section" type="text_general"/>
+  <field name="Sentences-level_Breakdown.text" type="text_general"/>
+  <field name="_nest_path_" type="_nest_path_"/>
+  <field name="_root_" type="string" docValues="false" indexed="true" stored="false"/>
+  <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
+  <field name="_version_" type="plong" indexed="false" stored="false"/>
+  <field name="abstract" type="text_general"/>
+  <field name="doc_id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+  <field name="level3.data.participants.negation" type="booleans"/>
+  <field name="level3.data.participants.term" type="text_general"/>
+  <field name="level3.data.study_design.connects_from" type="text_general"/>
+  <field name="level3.data.study_design.connects_to" type="text_general"/>
+  <field name="level3.data.study_design.label" type="text_general"/>
+  <field name="level3.data.study_design.term" type="text_general"/>
+  <field name="level3.data.study_design.type" type="text_general"/>
+  <field name="level3.data.study_results.connects_from" type="text_general"/>
+  <field name="level3.data.study_results.connects_to" type="text_general"/>
+  <field name="level3.data.study_results.label" type="text_general"/>
+  <field name="level3.data.study_results.term" type="text_general"/>
+  <field name="level3.data.study_results.type" type="text_general"/>
+  <field name="level3.data_provider.added_elements.enrollment" type="text_general"/>
+  <field name="level3.data_provider.added_elements.level3" type="text_general"/>
+  <field name="level3.data_provider.added_elements.study_design" type="text_general"/>
+  <field name="level3.data_provider.added_elements.study_results" type="text_general"/>
+  <field name="level3.data_provider.name" type="text_general"/>
+  <field name="payload" type="text_general"/>
+  <field name="publication_metadata.authors" type="text_general"/>
+  <field name="publication_metadata.epubdate" type="text_general"/>
+  <field name="publication_metadata.pages" type="text_general"/>
+  <field name="publication_metadata.pubdate" type="text_general"/>
+  <field name="publication_metadata.pubtype" type="text_general"/>
+  <field name="publication_metadata.source" type="text_general"/>
+  <field name="publication_metadata.title" type="text_general"/>
+  <field name="publication_metadata.volume" type="plongs"/>
+  <field name="study_design.Enrollment.end" type="plongs"/>
+  <field name="study_design.Enrollment.negation" type="booleans"/>
+  <field name="study_design.Enrollment.start" type="plongs"/>
+  <field name="study_design.Enrollment.term" type="text_general"/>
+  <field name="study_design.Enrollment.umls" type="text_general"/>
+  <field name="study_design.Hypothesis.Intervention" type="text_general"/>
+  <field name="study_design.Hypothesis.Observation" type="text_general"/>
+  <field name="study_design.Hypothesis.Outcome" type="text_general"/>
+  <field name="study_design.Hypothesis.negation" type="text_general"/>
+  <field name="study_design.Intervention.negation" type="booleans"/>
+  <field name="study_design.Intervention.term" type="text_general"/>
+  <field name="study_design.Intervention.umls" type="text_general"/>
+  <field name="study_design.Outcome.negation" type="booleans"/>
+  <field name="study_design.Outcome.term" type="text_general"/>
+  <field name="study_design.Outcome.umls" type="text_general"/>
+  <field name="study_design.Participant.negation" type="booleans"/>
+  <field name="study_design.Participant.term" type="text_general"/>
+  <field name="study_design.Participant.umls" type="text_general"/>
+  <field name="study_results.All_Arms.Count" type="text_general"/>
+  <field name="study_results.All_Arms.Outcome" type="text_general"/>
+  <field name="study_results.All_Arms.negation" type="booleans"/>
+  <field name="study_results.Arm_1.results.Observation" type="text_general"/>
+  <field name="study_results.Arm_1.results.Outcome" type="text_general"/>
+  <field name="study_results.Arm_1.results.negation" type="booleans"/>
+  <field name="study_results.Arm_1.term" type="text_general"/>
+  <field name="study_results.Arm_2.results.Observation" type="plongs"/>
+  <field name="study_results.Arm_2.results.Outcome" type="text_general"/>
+  <field name="study_results.Arm_2.results.negation" type="booleans"/>
+  <field name="study_results.Arm_2.term" type="text_general"/>
+  <field name="study_results.Comparison.Comparator" type="text_general"/>
+  <field name="study_results.Comparison.Intervention" type="text_general"/>
+  <field name="study_results.Comparison.Invervention" type="text_general"/>
+  <field name="study_results.Comparison.Observation" type="text_general"/>
+  <field name="study_results.Comparison.Outcome" type="text_general"/>
+  <field name="study_results.Comparison.negation" type="booleans"/>
+  <field name="study_results.Participant.count" type="text_general"/>
+  <field name="study_results.Participant.negation" type="booleans"/>
+  <field name="study_results.Participant.term" type="text_general"/>
+  <field name="title" type="text_general"/>
+  <field name="type_of_study" type="text_general"/>
+  <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true"/>
+  <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true"/>
+  <dynamicField name="*_ancestor_path" type="ancestor_path" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_en_split" type="text_en_splitting" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_sort" type="text_gen_sort" indexed="true" stored="true"/>
+  <dynamicField name="ignored_*" type="ignored"/>
+  <dynamicField name="*_txt_rev" type="text_general_rev" indexed="true" stored="true"/>
+  <dynamicField name="*_phon_en" type="phonetic_en" indexed="true" stored="true"/>
+  <dynamicField name="*_s_lower" type="lowercase" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_cjk" type="text_cjk" indexed="true" stored="true"/>
+  <dynamicField name="random_*" type="random"/>
+  <dynamicField name="*_t_sort" type="text_gen_sort" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_en" type="text_en" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_ar" type="text_ar" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_bg" type="text_bg" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_ca" type="text_ca" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_cz" type="text_cz" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_da" type="text_da" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_de" type="text_de" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_el" type="text_el" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_es" type="text_es" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_et" type="text_et" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_eu" type="text_eu" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_fa" type="text_fa" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_fi" type="text_fi" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_fr" type="text_fr" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_ga" type="text_ga" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_gl" type="text_gl" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_hi" type="text_hi" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_hu" type="text_hu" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_hy" type="text_hy" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_id" type="text_id" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_it" type="text_it" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_ja" type="text_ja" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_ko" type="text_ko" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_lv" type="text_lv" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_nl" type="text_nl" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_no" type="text_no" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_pt" type="text_pt" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_ro" type="text_ro" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_ru" type="text_ru" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_sv" type="text_sv" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_th" type="text_th" indexed="true" stored="true"/>
+  <dynamicField name="*_txt_tr" type="text_tr" indexed="true" stored="true"/>
+  <dynamicField name="*_point" type="point" indexed="true" stored="true"/>
+  <dynamicField name="*_srpt" type="location_rpt" indexed="true" stored="true"/>
+  <dynamicField name="attr_*" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="*_dts" type="pdates" indexed="true" stored="true"/>
+  <dynamicField name="*_txt" type="text_general" indexed="true" stored="true"/>
+  <dynamicField name="*_str" type="strings" docValues="true" indexed="false" stored="false" useDocValuesAsStored="false"/>
+  <dynamicField name="*_dpf" type="delimited_payloads_float" indexed="true" stored="true"/>
+  <dynamicField name="*_dpi" type="delimited_payloads_int" indexed="true" stored="true"/>
+  <dynamicField name="*_dps" type="delimited_payloads_string" indexed="true" stored="true"/>
+  <dynamicField name="*_is" type="pints" indexed="true" stored="true"/>
+  <dynamicField name="*_ss" type="strings" indexed="true" stored="true"/>
+  <dynamicField name="*_ls" type="plongs" indexed="true" stored="true"/>
+  <dynamicField name="*_bs" type="booleans" indexed="true" stored="true"/>
+  <dynamicField name="*_fs" type="pfloats" indexed="true" stored="true"/>
+  <dynamicField name="*_ds" type="pdoubles" indexed="true" stored="true"/>
+  <dynamicField name="*_dt" type="pdate" indexed="true" stored="true"/>
+  <dynamicField name="*_ws" type="text_ws" indexed="true" stored="true"/>
+  <dynamicField name="*_i" type="pint" indexed="true" stored="true"/>
+  <dynamicField name="*_s" type="string" indexed="true" stored="true"/>
+  <dynamicField name="*_l" type="plong" indexed="true" stored="true"/>
+  <dynamicField name="*_b" type="boolean" indexed="true" stored="true"/>
+  <dynamicField name="*_f" type="pfloat" indexed="true" stored="true"/>
+  <dynamicField name="*_d" type="pdouble" indexed="true" stored="true"/>
+  <dynamicField name="*_t" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="*_p" type="location" indexed="true" stored="true"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Participant.term" dest="Sentence-level_breakdown.Evidence_Elements.Participant.term_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Propositions.Intervention" dest="Sentence-level_breakdown.Evidence_Propositions.Intervention_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Propositions.Outcome" dest="Sentence-level_breakdown.Evidence_Propositions.Outcome_str" maxChars="256"/>
+  <copyField source="publication_metadata.pubdate" dest="publication_metadata.pubdate_str" maxChars="256"/>
+  <copyField source="publication_metadata.title" dest="publication_metadata.title_str" maxChars="256"/>
+  <copyField source="title" dest="title_str" maxChars="256"/>
+  <copyField source="type_of_study" dest="type_of_study_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Propositions.Observation" dest="Sentence-level_breakdown.Evidence_Propositions.Observation_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Propositions.negation" dest="Sentence-level_breakdown.Evidence_Propositions.negation_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Enrollment.term" dest="Evidence_Map.Enrollment.term_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Enrollment.negation" dest="Evidence_Map.Enrollment.negation_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Intervention.negation" dest="Sentence-level_breakdown.Evidence_Elements.Intervention.negation_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Count.term" dest="Sentence-level_breakdown.Evidence_Elements.Count.term_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Observation.term" dest="Sentence-level_breakdown.Evidence_Elements.Observation.term_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Section" dest="Sentence-level_breakdown.Section_str" maxChars="256"/>
+  <copyField source="publication_metadata.authors" dest="publication_metadata.authors_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Count.negation" dest="Sentence-level_breakdown.Evidence_Elements.Count.negation_str" maxChars="256"/>
+  <copyField source="abstract" dest="abstract_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Propositions.Count" dest="Sentence-level_breakdown.Evidence_Propositions.Count_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Outcome.negation" dest="Sentence-level_breakdown.Evidence_Elements.Outcome.negation_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Participant.negation" dest="Sentence-level_breakdown.Evidence_Elements.Participant.negation_str" maxChars="256"/>
+  <copyField source="publication_metadata.pages" dest="publication_metadata.pages_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Text" dest="Sentence-level_breakdown.Text_str" maxChars="256"/>
+  <copyField source="publication_metadata.source" dest="publication_metadata.source_str" maxChars="256"/>
+  <copyField source="publication_metadata.pubtype" dest="publication_metadata.pubtype_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Intervention.term" dest="Sentence-level_breakdown.Evidence_Elements.Intervention.term_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Outcome.term" dest="Sentence-level_breakdown.Evidence_Elements.Outcome.term_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Observation.negation" dest="Sentence-level_breakdown.Evidence_Elements.Observation.negation_str" maxChars="256"/>
+  <copyField source="publication_metadata.epubdate" dest="publication_metadata.epubdate_str" maxChars="256"/>
+  <copyField source="payload" dest="payload_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Outcome.class" dest="Sentences-level_Breakdown.Evidence_Elements.Outcome.class_str" maxChars="256"/>
+  <copyField source="study_design.Outcome.term" dest="study_design.Outcome.term_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Propositions.Outcome" dest="Sentences-level_Breakdown.Evidence_Propositions.Outcome_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Participant.term" dest="Sentences-level_Breakdown.Evidence_Elements.Participant.term_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Propositions.Intervention" dest="Sentences-level_Breakdown.Evidence_Propositions.Intervention_str" maxChars="256"/>
+  <copyField source="study_results.Arm_1.results.Outcome" dest="study_results.Arm_1.results.Outcome_str" maxChars="256"/>
+  <copyField source="study_design.Hypothesis.Observation" dest="study_design.Hypothesis.Observation_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.text" dest="Sentences-level_Breakdown.text_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Participant.UMLS" dest="Sentences-level_Breakdown.Evidence_Elements.Participant.UMLS_str" maxChars="256"/>
+  <copyField source="study_design.Enrollment.umls" dest="study_design.Enrollment.umls_str" maxChars="256"/>
+  <copyField source="study_results.Comparison.Invervention" dest="study_results.Comparison.Invervention_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Propositions.Participant" dest="Sentences-level_Breakdown.Evidence_Propositions.Participant_str" maxChars="256"/>
+  <copyField source="study_design.Participant.umls" dest="study_design.Participant.umls_str" maxChars="256"/>
+  <copyField source="study_design.Hypothesis.Outcome" dest="study_design.Hypothesis.Outcome_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Intervention.term" dest="Sentences-level_Breakdown.Evidence_Elements.Intervention.term_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Intervention.class" dest="Sentences-level_Breakdown.Evidence_Elements.Intervention.class_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Intervention.UMLS" dest="Sentences-level_Breakdown.Evidence_Elements.Intervention.UMLS_str" maxChars="256"/>
+  <copyField source="study_results.Comparison.Outcome" dest="study_results.Comparison.Outcome_str" maxChars="256"/>
+  <copyField source="study_results.Participant.term" dest="study_results.Participant.term_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Outcome.term" dest="Sentences-level_Breakdown.Evidence_Elements.Outcome.term_str" maxChars="256"/>
+  <copyField source="study_design.Enrollment.term" dest="study_design.Enrollment.term_str" maxChars="256"/>
+  <copyField source="study_results.Comparison.Comparator" dest="study_results.Comparison.Comparator_str" maxChars="256"/>
+  <copyField source="study_results.Arm_1.results.Observation" dest="study_results.Arm_1.results.Observation_str" maxChars="256"/>
+  <copyField source="study_results.Arm_2.term" dest="study_results.Arm_2.term_str" maxChars="256"/>
+  <copyField source="study_design.Intervention.term" dest="study_design.Intervention.term_str" maxChars="256"/>
+  <copyField source="study_results.Comparison.Observation" dest="study_results.Comparison.Observation_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Propositions.Count" dest="Sentences-level_Breakdown.Evidence_Propositions.Count_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Participant.class" dest="Sentences-level_Breakdown.Evidence_Elements.Participant.class_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Section" dest="Sentences-level_Breakdown.Section_str" maxChars="256"/>
+  <copyField source="study_design.Intervention.umls" dest="study_design.Intervention.umls_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Propositions.Observation" dest="Sentences-level_Breakdown.Evidence_Propositions.Observation_str" maxChars="256"/>
+  <copyField source="study_results.Participant.count" dest="study_results.Participant.count_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Ourcome.term" dest="Sentences-level_Breakdown.Evidence_Elements.Ourcome.term_str" maxChars="256"/>
+  <copyField source="study_design.Outcome.umls" dest="study_design.Outcome.umls_str" maxChars="256"/>
+  <copyField source="study_results.Arm_1.term" dest="study_results.Arm_1.term_str" maxChars="256"/>
+  <copyField source="study_design.Participant.term" dest="study_design.Participant.term_str" maxChars="256"/>
+  <copyField source="Sentences-level_Breakdown.Evidence_Elements.Outcome.UMLS" dest="Sentences-level_Breakdown.Evidence_Elements.Outcome.UMLS_str" maxChars="256"/>
+  <copyField source="study_results.Arm_2.results.Outcome" dest="study_results.Arm_2.results.Outcome_str" maxChars="256"/>
+  <copyField source="study_results.All_Arms.Count" dest="study_results.All_Arms.Count_str" maxChars="256"/>
+  <copyField source="study_results.All_Arms.Outcome" dest="study_results.All_Arms.Outcome_str" maxChars="256"/>
+  <copyField source="study_design.Hypothesis.Intervention" dest="study_design.Hypothesis.Intervention_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Comparison_Results.Outcome" dest="Evidence_Map.Comparison_Results.Outcome_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Comparison_Results.Intervention" dest="Evidence_Map.Comparison_Results.Intervention_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Comparison_Results.Observation" dest="Evidence_Map.Comparison_Results.Observation_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Comparison_Results.negation" dest="Evidence_Map.Comparison_Results.negation_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_1_Results.Outcome" dest="Evidence_Map.Study_Arm_1_Results.Outcome_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_1_Results.negation" dest="Evidence_Map.Study_Arm_1_Results.negation_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_1_Results.Intervention" dest="Evidence_Map.Study_Arm_1_Results.Intervention_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_1_Results.Observation" dest="Evidence_Map.Study_Arm_1_Results.Observation_str" maxChars="256"/>
+  <copyField source="study_results.Comparison.Intervention" dest="study_results.Comparison.Intervention_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_2_Results.negation" dest="Evidence_Map.Study_Arm_2_Results.negation_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_2_Results.Observation" dest="Evidence_Map.Study_Arm_2_Results.Observation_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_2_Results.Outcome" dest="Evidence_Map.Study_Arm_2_Results.Outcome_str" maxChars="256"/>
+  <copyField source="study_design.Hypothesis.negation" dest="study_design.Hypothesis.negation_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_2_Results.Intervention" dest="Evidence_Map.Study_Arm_2_Results.Intervention_str" maxChars="256"/>
+  <copyField source="Evidence_Map.Study_Arm_1_Results.Count" dest="Evidence_Map.Study_Arm_1_Results.Count_str" maxChars="256"/>
+  <copyField source="level3.data.participants.term" dest="level3.data.participants.term_str" maxChars="256"/>
+  <copyField source="level3.data.study_design.label" dest="level3.data.study_design.label_str" maxChars="256"/>
+  <copyField source="level3.data.study_results.connects_from" dest="level3.data.study_results.connects_from_str" maxChars="256"/>
+  <copyField source="level3.data_provider.added_elements.study_results" dest="level3.data_provider.added_elements.study_results_str" maxChars="256"/>
+  <copyField source="level3.data.study_results.label" dest="level3.data.study_results.label_str" maxChars="256"/>
+  <copyField source="level3.data_provider.name" dest="level3.data_provider.name_str" maxChars="256"/>
+  <copyField source="level3.data.study_results.term" dest="level3.data.study_results.term_str" maxChars="256"/>
+  <copyField source="level3.data.study_results.connects_to" dest="level3.data.study_results.connects_to_str" maxChars="256"/>
+  <copyField source="level3.data_provider.added_elements.enrollment" dest="level3.data_provider.added_elements.enrollment_str" maxChars="256"/>
+  <copyField source="level3.data.study_design.type" dest="level3.data.study_design.type_str" maxChars="256"/>
+  <copyField source="level3.data.study_design.connects_to" dest="level3.data.study_design.connects_to_str" maxChars="256"/>
+  <copyField source="level3.data.study_design.term" dest="level3.data.study_design.term_str" maxChars="256"/>
+  <copyField source="level3.data.study_results.type" dest="level3.data.study_results.type_str" maxChars="256"/>
+  <copyField source="level3.data.study_design.connects_from" dest="level3.data.study_design.connects_from_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Observation.negation_phrase" dest="Sentence-level_breakdown.Evidence_Elements.Observation.negation_phrase_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Outcome.negation_position" dest="Sentence-level_breakdown.Evidence_Elements.Outcome.negation_position_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Observation.negation_position" dest="Sentence-level_breakdown.Evidence_Elements.Observation.negation_position_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Participant.negation_phrase" dest="Sentence-level_breakdown.Evidence_Elements.Participant.negation_phrase_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Participant.negation_position" dest="Sentence-level_breakdown.Evidence_Elements.Participant.negation_position_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Outcome.negation_phrase" dest="Sentence-level_breakdown.Evidence_Elements.Outcome.negation_phrase_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Intervention.negation_phrase" dest="Sentence-level_breakdown.Evidence_Elements.Intervention.negation_phrase_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Intervention.negation_position" dest="Sentence-level_breakdown.Evidence_Elements.Intervention.negation_position_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Count.negation_phrase" dest="Sentence-level_breakdown.Evidence_Elements.Count.negation_phrase_str" maxChars="256"/>
+  <copyField source="Sentence-level_breakdown.Evidence_Elements.Count.negation_position" dest="Sentence-level_breakdown.Evidence_Elements.Count.negation_position_str" maxChars="256"/>
+  <copyField source="level3.data_provider.added_elements.study_design" dest="level3.data_provider.added_elements.study_design_str" maxChars="256"/>
+  <copyField source="level3.data_provider.added_elements.level3" dest="level3.data_provider.added_elements.level3_str" maxChars="256"/>
+</schema>
