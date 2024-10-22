@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+{% block head %}
+
+
+	<link rel="stylesheet" href="/static/css/loading.css">
+	<style type="text/css">
+        .Participant {
+            background: {{ color_pallette['Participant'] }};
+        }
+
+        .Intervention {
+            background: {{ color_pallette['Intervention'] }};
+        }
+
+        .Outcome {
+            background: {{ color_pallette['Outcome'] }};
+        }
+	</style>
+{% endblock %}
+{% block content %}
+	<style type="text/css">
+        .div_block {
+            text-align: center;
+            margin: 0 auto;
+            padding: 0;
+            vertical-align: middle;
+            clear: both;
+            display: inline-block;
+            _display: inline;
+            *display: inline;
+        }
+
+
+        ul li {
+            list-style: none;
+            margin: 2px;
+            width: 100%;
+            border-raius: 15px;
+            /*  padding: 5px;*/
+
+        }
+
+        .deleteMe {
+            float: right;
+            font-size: 15px;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f1f1f1;
+            min-width: 100px;
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .more {
+            position: relative;
+            margin: 0 auto;
+            background: #ededed;
+            text-align: center;
+            height: 28px;
+            width: 850px;
+
+        }
+
+	</style>
+	<div style="background:transparent !important">
+		<p style="color:#FFFFFF;">pass</p>
+
+		<!-- Material input -->
+		<!-- Extended default form grid -->
+		<div style=' margin: 0 auto;text-align: center; margin-top: 9%; width:1000px'>
+			<div class="div_block" id="logo_div" style=' margin-right:10px;'>
+				<img src="/static/img/logo4.png" height="115px" alt="Italian Trulli">
+			</div>
+
+
+			<div style='margin-top: 30px; font-size: 18px;'>Advanced Search Builder</div>
+
+			<div style='margin-top: 40px; '>
+				<!-- <div class="div_block" style=' font-size:16px; width:200px; '> Element </div>
+                <div class="div_block" style='font-size:16px;  width:360px;'> Content</div>
+                <div class="div_block" style='width:170px;'> </div> -->
+
+			</div>
+
+			<div style='margin-top: 5px; '>
+
+				<div class="div_block" style='margin:0 auto; display:inline-block;  font-size:16px; '>
+					<select id="elements" name="elements" style='width: 140px; height:36px; border-color:#c6c6c6'>
+						<option value="Participant">Participant</option>
+						<option value="Intervention">Intervention</option>
+						<option value="Outcome">Outcome</option>
+					</select>
+				</div>
+				<div class="div_block" style='margin-left: 15px;  '>
+					{#      <label for="Intervention">Intervention</label>#}
+					<input style=' width:360px; height:36px ; margin-left: 15px;' type="text" class="form-control"
+					       id="Value" placeholder="" name="Value" required="true">
+
+				</div>
+				<div class="div_block" style='  margin-left: 10px;'>
+					<button type="submit" onclick="addTags()" id="Add" class="btn btn-primary btn-md"
+					        style='align:center;  font-size:16px; width:120px;height:36px;'>Add
+					</button>
+					<div class="dropdown" style="position: absolute; display: inline-block;">
+						<button class="btn btn-primary btn-md"
+						        style="margin-left: 0.5px; padding: 6px;  font-size: 16px;  border: none;  outline: none;">
+							<i class="fa fa-caret-down"> </i>
+						</button>
+						<div class="dropdown-content">
+							<a href="#" id="Add with AND">with AND</a>
+							<a href="#" id="Add with OR">with OR</a>
+
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div style='margin-top: 10px;margin-left: 170px;text-align: left;font-size:16px; '><i style='color: grey;'>
+				E.g. Participant: COVID-19, Intervention: Hydroxychloroquine, remdesivir Outcome: safety, efficacy</i>
+			</div>
+
+
+			<div style='margin-top: 25px; font-size:16px;'>
+				<form action="{{ url_for('advanced_search') }}">
+
+
+					<div style='  display:inline-block; text-align: left;font-size:16px; font-family:Arial ;border-width: 1.5px; border-color: #c4c4c4;border-style: dashed; overflow:hidden;height:1%; width:845px'>
+						<div style='width:260px;float:left;  margin: 10px;display:inline;border-width: 1.5px; border-color: #c4c4c4;border-style: solid; '>
+							<div style='text-align:center'><b>Participant</b></div>
+							<ul id='Participant_tag' style="margin: 10px;"></ul>
+
+						</div>
+
+						<!-- <div style=' float:left; display:inline; margin: 10px;font-size:16px; '>
+                          <select id="type_relation1"  name="elements" style='width: 60px; height:30px; font-weight: bold; font-style: italic;border-color:#c6c6c6'>
+                            <option value="and">AND</option>
+                            <option value="or">OR</option>
+
+                          </select>
+                        </div> -->
+						<div style='width:260px;margin: 10px;float:left; display:inline;border-width: 1.5px; border-color: #c4c4c4;border-style: solid;'>
+							<div style='text-align:center'><b>Intervention</b></div>
+							<ul id='Intervention_tag' style="margin: 10px;"></ul>
+						</div>
+						<!--  <div style=' float:left; display:inline; margin: 10px;margin-right: 10px;font-size:16px; '>
+                           <select id="type_relation2"  name="elements" style='width: 60px; height:30px; font-weight: bold; font-style: italic;border-color:#c6c6c6'>
+                             <option value="and">AND</option>
+                             <option value="or">OR</option>
+                           </select>
+                         </div> -->
+
+						<div style='width:260px;float:right; display:inline; margin: 10px;border-width: 1.5px; border-color: #c4c4c4;border-style: solid;'>
+							<div style='text-align:center'><b>Outcome</b></div>
+							<ul id='Outcome_tag' style="margin: 10px;"></ul>
+						</div>
+
+
+					</div>
+					<div id='hide_show_generated_query' class="collapseHeader ui fluid more" data-toggle="collapse"
+					     data-target="generated_query" aria-expanded="true">Formulated Query (click to open)
+					</div>
+
+
+					<div id='generated_query' class="collapse hide" aria-labelledby="headingOne"
+					     style='margin-left: 76px; text-align: left;font-size:16px; font-family:Arial ;border-width: 1.5px; border-color: #c4c4c4;border-style: solid; overflow:hidden;height:1%; width:845px'>
+						<div id='query'></div>
+						<br>
+						<div style='text-align:center;'>
+							<button type="reset" onclick="showQuery()" class="btn"
+							        style='margin-bottom: 4px;font-size:16px; width:90px;height:36px;background:#738391; color:white'>
+								Update
+							</button>
+						</div>
+					</div>
+
+
+					<br>
+					<div class="div_block" style='align:center; margin-top: 15px;  width:120px; margin-left: 15px;'>
+						<input type="hidden" id="Participant" name="Participant" value=''/>
+						<input type="hidden" id="Intervention" name="Intervention" value=''/>
+						<input type="hidden" id="Outcome" name="Outcome" value=''/>
+						<button type="submit" onclick="passTags()" class="btn btn-primary btn-md"
+						        style='align:center;  font-size:16px; width:120px;height:42px'> Search
+						</button>
+					</div>
+
+					<div class="div_block" style='align:center; margin-top: 15px;  width:120px; margin-left: 15px;'>
+						<button type="reset" onclick="clearcontent()" class="btn btn-primary btn-md"
+						        style='align:center;  font-size:16px; width:120px;height:42px'> Reset
+						</button>
+				</form>
+
+			</div>
+
+
+		</div>
+
+
+	</div>
+
+
+	{#  8/12/2020 add popup for error#}
+	{% with messages=get_flashed_messages() %}
+		{% if messages %}
+			{% for message in messages %}
+				<div class="alert alert-danger" role="alert">
+					{{ message }}
+				</div>
+			{% endfor %}
+		{% endif %}
+	{% endwith %}
+
+	<div style='text-align:center;margin-top: 100px;width:100%;height: 100px;'>
+
+	</div>
+
+
+	</div>
+
+	<div class="dimmer">
+		<div class="loader">
+			<div class="lds-facebook" style="height: 60px; ">
+
+				<div style='background:#00BFFF;opacity: 1;'></div>
+				<div style='background:#00BFFF;opacity: 1;'></div>
+				<div style='background:#00BFFF;opacity: 1;'></div>
+
+			</div>
+			<div style=' text-align:center;width: 100%;font-size: 16px;margin-top: 0px;color: #F0FFFF;'>
+				<b>Searching...</b></div>
+
+		</div>
+	</div>
+
+	</div>
+
+	<script type="text/javascript">
+
+        var el = document.getElementById('Add with AND');
+        el.onclick = showFoo;
+
+        function showFoo() {
+            // alert('I am foo!');
+            document.getElementById("Add").innerHTML = "AND";
+            return false;
+        }
+
+        var el = document.getElementById('Add with OR');
+        el.onclick = showFoo2;
+
+        function showFoo2() {
+            // alert('I am foo!');
+            document.getElementById("Add").innerHTML = "OR";
+            return false;
+        }
+
+
+        window.onload = function () {
+            var arr = new Array(3)
+            arr[0] = {{ Participant_list|safe }}
+            arr[1] = {{ Intervention_list|safe }}
+            arr[2] = {{ Outcome_list|safe }}
+            for (var i = 0; i < arr.length; i += 1) {
+                if (arr[i].length > 0) {
+                    for (var j = 0; j < arr[i].length; j += 2) {
+
+                        var node_li = document.createElement("li");
+                        var node_td_relation = document.createElement("td");
+                        var node_div_relation = document.createElement("div");
+                        var node_p_relation = document.createElement("p");
+                        node_td_relation.setAttribute("style", " height:20px")
+                        node_div_relation.setAttribute("style", "width:30px; height:100%; position:relative;font-weight:bold;font-size:10px;font-family: Garamond;");
+                        node_p_relation.setAttribute("style", "position:absolute;bottom:2px;width:100%;text-align:center")
+
+                        node_p_relation.innerHTML = arr[i][j];
+                        node_div_relation.appendChild(node_p_relation);
+                        node_td_relation.appendChild(node_div_relation);
+                        node_li.appendChild(node_td_relation);
+
+                        var node_div_lr = document.createElement("td");
+                        var textnode = document.createTextNode(arr[i][j + 1]);
+                        node_div_lr.appendChild(textnode);
+
+                        var node_div_delete = document.createElement("DIV");
+                        node_div_delete.setAttribute("class", "deleteMe");
+                        var textnode = document.createTextNode('X');
+                        node_div_delete.appendChild(textnode);
+                        node_div_lr.appendChild(node_div_delete);
+                        node_li.appendChild(node_div_lr);
+                        if (i == 0) {
+                            node_div_lr.setAttribute("style", "background:#CCCCFF;width: 100%; padding: 5px; vertical-align: bottom; ");
+                            document.getElementById('Participant_tag').appendChild(node_li);
+                        }
+                        if (i == 1) {
+                            node_div_lr.setAttribute("style", "background:#9FE2BF;width: 100%; padding: 5px; vertical-align: bottom; ");
+                            document.getElementById('Intervention_tag').appendChild(node_li);
+                        }
+                        if (i == 2) {
+                            node_div_lr.setAttribute("style", "background:#F7DC6F;width: 100%; padding: 5px; vertical-align: bottom; ");
+                            document.getElementById('Outcome_tag').appendChild(node_li);
+                        }
+
+                    }
+                }
+            }
+
+        }
+
+        var query = document.getElementById('hide_show_generated_query');
+        query.onclick = showQuery;
+
+        function showQuery() {
+            document.getElementById("query").innerHTML = "<div style='margin:10px'> " + passTags() + "</div>";
+        }
+
+
+        function passTags() {
+            var tags = ["Participant_tag", "Intervention_tag", "Outcome_tag"]
+            var element_type = ["Participant", "Intervention", "Outcome"]
+
+            total_length = document.getElementById(tags[0]).childNodes.length + document.getElementById(tags[1]).childNodes.length + document.getElementById(tags[2]).childNodes.length
+
+            var query = ''
+            flag = true
+            for (var t = 0; t < tags.length; t++) {
+                content = ''
+                valueList = [];
+                var parent = document.getElementById(tags[t]);
+                if (parent.childNodes.length == 1 && total_length == 1) {
+                    valueList.push('')
+                    valueList.push(parent.childNodes[0].childNodes[1].innerHTML.split('<')[0].trim().replace(/\,/g, ""))
+
+                    if (flag) {
+                        query += element_type[t] + ' =';
+                        flag = false;
+                    } else {
+                        query += ' AND ' + element_type[t] + ' =';
+                    }
+                    content = "(" + content
+                    content += "'" + parent.childNodes[0].childNodes[1].innerHTML.split('<')[0] + "'" + " )"
+                } else {
+                    for (var i = 0; i < parent.childNodes.length; i++) {
+                        if (i == 0) {
+                            if (flag) {
+                                query += element_type[t] + ' = ';
+                                flag = false;
+                            } else {
+                                query += ' AND ' + element_type[t] + ' = ';
+                            }
+                        }
+                        var child = parent.childNodes[i];
+                        var relation = child.childNodes[0].childNodes[0].innerHTML.replace('<p style="position:absolute;bottom:2px;width:100%;text-align:center">', '').replace('</p>', '')
+                        var value = child.childNodes[1].innerHTML.split('<')[0]
+                        var temp = []
+                        temp.push(relation)
+                        value = value.trim().replace(/\,/g, "");
+                        temp.push(value)
+                        valueList.push(temp)
+
+                        content = "(" + content
+                        content += relation + " '" + value + "'" + ") "
+                    }
+                }
+                if (content.length > 0) {
+                    query += content
+                }
+                document.getElementById(element_type[t]).value = valueList;
+
+            }
+            return query;
+        }
+
+
+        function clearcontent() {
+            document.getElementById('Participant_tag').innerHTML = "";
+            document.getElementById('Intervention_tag').innerHTML = "";
+            document.getElementById('Outcome_tag').innerHTML = "";
+        }
+
+        function spinner() {
+            document.getElementsByClassName("loader")[0].style.display = "block";
+            console.log("Spinner triggered")
+        }
+
+        function addTags(variable) {
+
+            if (document.getElementById("Value").value) {
+                var node_li = document.createElement("li");
+
+                var node_td_relation = document.createElement("td");
+                var node_div_relation = document.createElement("div");
+                var node_p_relation = document.createElement("p");
+
+                node_td_relation.setAttribute("style", " height:20px")
+                node_div_relation.setAttribute("style", "width:30px; height:100%; position:relative;font-weight:bold;font-size:10px;font-family: Garamond;");
+                node_p_relation.setAttribute("style", "position:absolute;bottom:2px;width:100%;text-align:center")
+                if ((document.getElementById("Participant_tag").childNodes.length >= 1 && document.getElementById("elements").value == 'Participant') ||
+                    (document.getElementById("Intervention_tag").childNodes.length >= 1 && document.getElementById("elements").value == 'Intervention') ||
+                    (document.getElementById("Outcome_tag").childNodes.length >= 1 && document.getElementById("elements").value == 'Outcome')) {
+
+                    if (document.getElementById("Add").innerHTML == "OR") {
+                        node_p_relation.innerHTML = "OR";
+                        document.getElementById("Add").innerHTML = "OR"
+
+                    } else {
+                        node_p_relation.innerHTML = "AND";
+                        document.getElementById("Add").innerHTML = "AND"
+
+                    }
+                }
+                node_div_relation.appendChild(node_p_relation);
+
+                node_td_relation.appendChild(node_div_relation);
+                node_li.appendChild(node_td_relation);
+
+                var node_div_lr = document.createElement("td");
+                var textnode = document.createTextNode(document.getElementById("Value").value);
+
+
+                node_div_lr.appendChild(textnode);
+
+                var node_div_delete = document.createElement("DIV");
+                node_div_delete.setAttribute("class", "deleteMe");
+                var textnode = document.createTextNode('X');
+                node_div_delete.appendChild(textnode);
+                node_div_lr.appendChild(node_div_delete);
+                node_li.appendChild(node_div_lr);
+                node_li.setAttribute("style", "margin-right: 15px; ");
+
+                if (document.getElementById("elements").value == 'Participant') {
+                    node_div_lr.setAttribute("style", "background:{{ color_pallette['Participant'] }};width: 100%; padding: 5px; vertical-align: bottom; ");
+                    document.getElementById('Participant_tag').appendChild(node_li);
+
+
+                } else if (document.getElementById("elements").value == 'Intervention') {
+                    node_div_lr.setAttribute("style", "background:{{ color_pallette['Intervention'] }};width: 100%; padding: 5px;vertical-align: bottom;");
+                    document.getElementById('Intervention_tag').appendChild(node_li);
+                } else if (document.getElementById("elements").value == 'Outcome') {
+                    node_div_lr.setAttribute("style", "background:{{ color_pallette['Outcome'] }};width: 100%; padding: 5px;vertical-align: bottom;");
+                    document.getElementById('Outcome_tag').appendChild(node_li);
+                }
+
+
+            }
+        }
+
+
+	</script>
+	<script src="https://cpwebassets.codepen.io/assets/common/stopExecutionOnTimeout-8216c69d01441f36c0ea791ae2d4469f0f8ff5326f00ae2d00e4bb7d20e24edb.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script id="rendered-js">
+
+        $(function () {
+            var dimmerButton = $('.dim');
+            var dimmer = $('.dimmer');
+
+            dimmerButton.on('click', function () {
+                dimmer.show();
+            });
+
+        });
+
+
+        $("#Participant_tag").on("click", ".deleteMe", function () {
+            // $(this).parent().remove();
+            $(this).parent().parent().remove();
+        });
+
+        $("#Intervention_tag").on("click", ".deleteMe", function () {
+            $(this).parent().parent().remove();
+        });
+        $("#Outcome_tag").on("click", ".deleteMe", function () {
+            $(this).parent().parent().remove();
+        });
+        //# sourceURL=pen.js
+
+	</script>
+{% endblock %}

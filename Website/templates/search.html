@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block head %}
+
+
+	<link rel="stylesheet" href="/static/css/loading.css">
+{% endblock %}
+{% block content %}
+	<style type="text/css">
+        .div_block {
+            text-align: center;
+            margin: 0 auto;
+            padding: 0;
+            vertical-align: middle;
+            clear: both;
+            display: inline-block;
+            _display: inline;
+            *display: inline;
+        }
+
+        .feature_block {
+            display: inline-block;
+            width: 282px;
+            margin: 5px;
+        }
+
+        .feature_icon {
+            /* #4169E1*/
+            color: #4980c1;
+            font-size: 40px;
+        }
+
+        .feature_title {
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .feature_intro {
+            font-size: 14px;
+        }
+
+
+	</style>
+
+	<!--  <div style="background:transparent !important;" class="jumbotron"> -->
+	<div style="background:transparent !important;">
+		<p style="color:#FFFFFF;">pass</p>
+		<!-- Material input -->
+		<!-- Extended default form grid -->
+
+		<div style=' margin: 0 auto;text-align: center; margin-top: 9%; width:1400px'>
+			<div class="div_block" id="logo_div" style=' margin-right:10px;'>
+				<img src="/static/img/logo4.png" height="115" alt="Italian Trulli">
+			</div>
+
+			<div style='text-align:center; margin-top: 100px; '>
+
+				<div style='margin-top: 10px;'>
+					<form action="{{ url_for('main_search') }}">
+
+						<div class="div_block" style=' margin:0 auto; display:inline-block; '>
+							{#  <label for="Question">Question</label>#}
+							<input type="text" class="form-control" style='height:42px; width:700px;' id="Query"
+							       placeholder="PMID, Key words or Clinical questions" name="Query" required="true">
+						</div>
+						<div class="div_block" style='align:center;  '>
+							<button type="submit" class="btn btn-success dim"
+							        style='align:center; margin-left: 10px; margin-top: 0px; margin-bottom: 0px; background:#347ef4;font-size:18px; width:130px;height:42px'
+							        onclick="spinner()">Search
+							</button>
+						</div>
+					</form>
+				</div>
+
+				<div>
+					<div class="div_block" style='text-align: left; width:720px; margin-top: 5px;color:grey'><a
+							href='/introduction' style="color:
+;"> <i>User Guide</i></a></div>
+					<div class="div_block" style='text-align: left;width:100px; '></div>
+					<!-- #6F8FAF -->
+
+				</div>
+
+
+				<div class="div_block" style='text-align: center;font-size:17px; width:1020px; margin-top: 10px;'><img
+						src="https://img.icons8.com/ios/22/000000/advanced-search.png"/><a href='/advanced_search_page'
+				                                                                           style="color:#0047AB;">
+					Advanced Search</a></div>
+
+
+				<div style="margin-top: 100px;">
+					<div>
+						<div class="feature_block">
+							<div style=""><a href='http://people.dbmi.columbia.edu/~chw7007/'></a><i
+									class="fas fa-book feature_icon"></i></div>
+							<div class="feature_title">Large Base</div>
+							<div class="feature_intro"><b>81,683</b> PubMed article abstracts are included for completed
+								randomized controlled trials from <b>2000</b> to <b>2021</b> year
+							</div>
+						</div>
+						<div class="feature_block">
+							<div style=""><a href='http://people.dbmi.columbia.edu/~chw7007/'></a><i
+									class="fas fa-comment-alt feature_icon"></i></div>
+							<div class="feature_title">Question Query</div>
+							<div class="feature_intro">Search by PMID, Keyword or Question: E.g. "Do chloroquine or
+								hydroxychloroquine improve outcomes in COVID-19 infection?"
+							</div>
+						</div>
+						<div class="feature_block">
+							<div style=""><a href='/advanced_search_page'><i
+									class="fas fa-search-plus feature_icon"></i></a></div>
+							<div class="feature_title">Logic Query</div>
+							<div class="feature_intro">Search by logic combination of terms: E.g. "hydroxychloroquine"
+								and "personal protective equipment" or "remdesivir"
+							</div>
+						</div>
+					</div>
+					<div style="margin-top: 25px;">
+						<div class="feature_block">
+							<div style=""><a href='http://people.dbmi.columbia.edu/~chw7007/'></a><i
+									class="fas fa-tags feature_icon"></i></div>
+							<div class="feature_title">Element Annotation</div>
+							<div class="feature_intro">Three types of elements: <b>Population, Intervention,</b> and <b>Outcome</b>
+								(PIO) are annotated for each article abstract
+							</div>
+						</div>
+						<div class="feature_block">
+							<div style=""><a href='http://people.dbmi.columbia.edu/~chw7007/'></a><i
+									class="fas fa-sitemap feature_icon"></i></div>
+							<div class="feature_title">Evidence Map</div>
+							<div class="feature_intro">Hierarchical dependency relationships among PIO elements are
+								visualized and clustered by Arm1 or Arm2
+							</div>
+						</div>
+
+						<div class="feature_block">
+							<div style=""><a href='http://people.dbmi.columbia.edu/~chw7007/'></a><i
+									class="fas fa-cloud-download-alt feature_icon"></i></div>
+							<div class="feature_title">Download</div>
+							<div class="feature_intro">Parsed PubMed article abstracts including annotated PIO elements
+								can be downloaded in JSON format
+							</div>
+						</div>
+					</div>
+
+				</div>
+				<div class="ui message" id="stats" style="border: 1px solid #ededed; margin:0 auto;  margin-top: 8%; width
+: 61%;text-align:justify;">
+					<h5 style="text-align: center">Disclaimer</h5>
+					<p style="font-size:14px;">
+						This tool was first created by Columbia University's Weng Lab and further enhanced by Maximilian
+						Doerr and Yingcheng Sun from University of North Carolina of Greensboro.
+						The tool's output isn't meant for direct medical decision-making without a health professional's
+						supervision. It shouldn't solely dictate health behavior changes. Neither Columbia University
+						nor UNCG independently verify the tool's information. For any concerns about the tool's outputs,
+						please consult a healthcare professional.
+					</p>
+				</div>
+
+			</div>
+
+		</div>
+		{#  8/12/2020 add popup for error#}
+		{% with messages=get_flashed_messages() %}
+			{% if messages %}
+				{% for message in messages %}
+					<div class="alert alert-danger" role="alert">
+						{{ message }}
+					</div>
+				{% endfor %}
+			{% endif %}
+		{% endwith %}
+
+
+	</div>
+
+	<div>
+
+		<div class="dimmer">
+			<div class="loader">
+				<div class="lds-facebook" style="height: 60px; ">
+
+					<div style='background:#00BFFF;opacity: 1;'></div>
+					<div style='background:#00BFFF;opacity: 1;'></div>
+					<div style='background:#00BFFF;opacity: 1;'></div>
+
+				</div>
+				<div style=' text-align:center;width: 100%;margin-top: 0px;color: #F0FFFF;'><b>Searching...</b></div>
+
+			</div>
+		</div>
+
+	</div>
+
+	<script type="text/javascript">
+        function spinner() {
+            document.getElementsByClassName("loader")[0].style.display = "block";
+            console.log("Spinner triggered")
+        }
+	</script>
+	<script src="https://cpwebassets.codepen.io/assets/common/stopExecutionOnTimeout-8216c69d01441f36c0ea791ae2d4469f0f8ff5326f00ae2d00e4bb7d20e24edb.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script id="rendered-js">
+
+        $(function () {
+            var dimmerButton = $('.dim');
+            var dimmer = $('.dimmer');
+
+            dimmerButton.on('click', function () {
+                dimmer.show();
+            });
+
+        });
+        //# sourceURL=pen.js
+
+	</script>
+{% endblock %}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Evidence Map Search Engine</title>
+	<meta name="copyright" content="columbia university"/>
+	<meta name="copyright" content="university of North Carolina of Greensboro"/>
+	<meta name="author" content="Yingcheng Sun, Tian Kang, Fengyang Lin, Chunhua Weng, Maximilian Doerr">
+
+	<!-- style -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+
+
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css"
+	      integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+	<!-- javascript -->
+
+	<script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+	<link rel="stylesheet" href="https://seiyria.com/bootstrap-slider/css/bootstrap.min.css">
+	<!-- <link href="https://seiyria.com/bootstrap-slider/css/bootstrap-slider.css" rel="stylesheet"> -->
+	<!--  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous"> -->
+	<link rel="stylesheet" href="/static/css/jquery-ui.css">
+	<link rel="stylesheet" href="/static/css/bootstrap-slider.css">
+
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+	<script type=application/javascript>
+        var SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+	</script>
+
+	{% block head %}
+		<link rel="stylesheet" href="/static/css/loading.css">
+		<link rel="stylesheet" href="/static/css/style.css">
+
+	{% endblock %}
+	<style>
+        .tooltip {
+            font-family: Georgia;
+            font-size: 17px;
+
+        }
+
+        .tooltip .tooltip-inner {
+            background-color:;
+            min-width: 210px;
+            text-align: left;
+        }
+
+	</style>
+
+</head>
+<body style="font-size: 16px;">
+
+<div class="ui stackable secondary container menu" style="float:right; width: 100%;background-color: #EBEDEF;">
+	<div class="ui logo shape">
+
+	</div>
+	<div class="right menu" style="align:right;font-size: 14px;">
+		<div class="item">
+			<a href='/'> <i class="fa fa-search mr-1"></i></i>Home </a>
+		</div>
+		<div class="item">
+			<a href='https://github.com/cyberpower678/evidencemap' target="_blank"> <i
+					class="github icon"></i>GitHub</a>
+		</div>
+
+		<div class="item">
+			<a href='https://compsci.uncg.edu/faculty/yingcheng-sun/' target="_blank"> <i class="address card icon"></i>About
+				Us</a>
+		</div>
+		<div class="item">
+			<a href='mailto:y_sun4@uncg.edu' target="_blank"> <i class="fa fa-envelope"></i> Contact Us</a>
+		</div>
+
+	</div>
+</div>
+
+
+
+
+
+
+{% block content %}
+
+{% endblock %}
+
+
+<script type="text/javascript">
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+</script>
+<script src="https://use.fontawesome.com/007fd3ce0b.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+<script src="https://seiyria.com/bootstrap-slider/js/bootstrap-slider.js"></script>
+<script src="/static/js/search.js"></script>
+<script src="/static/js/result_page.js"></script>
+
+</body>
+</html>
