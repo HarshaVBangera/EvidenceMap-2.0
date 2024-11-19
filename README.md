@@ -1,6 +1,15 @@
 # EvidenceMap
 
-The EvidenceMap project aims to facilitate the ingestion of PubMed articles, specifically Randomized Control Trials (RCTs). It parses out essential data from these articles and builds a PICO map visualizing the RCT outcomes. The project consists of several modules under development. Each has its specific function towards achieving the overall objective of the project.
+EvidenceMap transforms PubMed articles into actionable insights by extracting and visualizing key data from Randomized Control Trials (RCTs). The system creates interactive PICO (Population, Intervention, Control, Outcome) maps that reveal relationships and patterns across clinical studies.
+
+Key Features:
+- Automated PubMed article ingestion
+- Smart extraction of PICO elements
+- Dynamic evidence mapping visualization
+- Multi-document analysis capabilities
+- Interactive data exploration
+
+The project features multiple specialized modules working together to deliver comprehensive research insights through visual evidence maps.
 
 For detailed usage of the modules including the inputs of the functions, please see the individual README files in the module's directory.
 
@@ -103,6 +112,9 @@ MapDriver = EvidenceMapDriver.load_driver(<identifier>, Propositions, <configura
 ```
 
 Please refer to the [EvidenceMap README](./EvidenceMap/README.md) for more details.
+
+### Timeline
+Final due date - 19 November 2024
 
 ### Pretrained Models and SOLR
 Fine-tuned models and SOLR data can be found [here](https://nextcloud.cybercloudhub.org/s/PFsDa2b2WrRf9Sq).  The password is "EvidenceMap4TW".  Simply merge the folder structure with the project root to install them.
