@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+
+{% block head %}
+	<link rel="stylesheet" href="/static/css/loading.css">
+	<style type="text/css">
+        .Participant {
+            background: {{ color_pallette['Participant'] }};
+        }
+
+        .Intervention {
+            background: {{ color_pallette['Intervention'] }};
+        }
+
+        .Outcome {
+            background: {{ color_pallette['Outcome'] }};
+        }
+	</style>
+
+{% endblock %}
+{% block content %}
+
+
+	<style type="text/css">
+        .div_block {
+            text-align: center;
+            margin: 0 auto;
+            padding: 0;
+            vertical-align: middle;
+            clear: both;
+            display: inline-block;
+            _display: inline;
+            *display: inline;
+        }
+
+        .left_relation {
+            font-weight: bold;
+            font-size: 10px;
+            font-family: Garamond;
+            display: inline-block;
+            margin-top: 5px;
+            text-align: right;
+            padding: 2px;
+            width: 40px;
+            vertical-align: bottom;
+        }
+
+        .left_elements {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 2px;
+            display: none;
+        }
+
+        .left_entity {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 2px;
+        }
+
+        .left_check {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 2px;
+            width: 40px;
+        }
+
+        .left_facets {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 2px;
+
+        }
+
+        .feature-border {
+            border-style: solid;
+            border-color: #a3a3a3;
+            border-width: 1px;
+            margin-top: 20px;
+        }
+
+        .more {
+            position: relative;
+            margin: 0 auto;
+            background: #ededed;
+            text-align: center;
+            border-radius: 6px;
+            padding: 3px;
+            width: 96%;
+            margin-top: 10px;
+        }
+	</style>
+
+	<!-- Extended default form grid -->
+
+	<!-- Default input -->
+	<div style=' margin-top: 10px;margin: 0 auto;  height:40px;  '>
+	</div>
+
+	<div style='margin: 0 auto;  height:100px; '>
+		<div style='float:left;  width: 24.5%;'>
+			<a href='/'><img src="/static/img/logo4.png" height="80px" alt="Italian Trulli"></a>
+		</div>
+		<div style='margin-top: 5px;float:left;margin: 0 auto; width: 75%;height:110px; '>
+
+			<form action="{{ url_for('main_search') }}">
+				{#  <label for="Question">Question</label>#}
+				<input type="text" class="form-control"
+				       style='margin-left: 7.5%;float:left; display:inline; margin-top: 38px;height:42px; width:50%;'
+				       id="Query" placeholder="PMID, key words, clinical questions" value="{{ query }}" name="Query"
+				       required="true">
+
+				<button type="submit" class="btn btn-success dim"
+				        style='float:left; display:inline; margin-top: 38px; margin-left: 20px; background:#347ef4;width:140px;height:42px;color:white;border-style: none;border-radius: 3px;'
+				        onclick="spinner()">Search
+				</button>
+				<div style='float:left; margin-top: 50px;width: 130px; margin-left: 30px;height:20px; '><a
+						href='/advanced_search_page'> Advanced Search</a></div>
+
+			</form>
+
+		</div>
+		<!-- <input style="margin-left: 26%;" type="checkbox" id="Query Extension" name="Query Extension" value="Query Extension" checked><label style='margin: 0 auto;' for="Query Extension">&nbsp Query Extension</label> -->
+
+	</div>
+
+	<hr style="text-align:left;margin-top:20px;color:gray;background-color:gray">
+
+
+	<div style='text-align: center;'>
+	<div style='margin-top:20px; margin-right:10px; width:400px; display: inline-block;vertical-align: top; '>
+		<div style=' margin: 0 auto; margin-left: 3%;text-align:center; height: 30px;'>
+			<div class=Participant style="float:left; margin-top:5px; height:18px; width:22px;padding:2px "></div>
+			<div style="float:left; text-align:left;"> &nbsp;Participant &nbsp;&nbsp;&nbsp</div>
+			<div class=Intervention style="float:left; margin-top:5px; height:18px; width:22px; "></div>
+			<div style="float:left;text-align:left; "> &nbsp;Intervention&nbsp;&nbsp;&nbsp</div>
+			<div class=Outcome style="float:left; margin-top:5px; height:18px; width:22px; "></div>
+			<div style="float:left; text-align:left; ">&nbsp;Outcome&nbsp;</div>
+		</div>
+
+		<div style=' margin: 0 auto; text-align:left; margin:10px'>
+			{% if Participant|length>0 or Intervention|length>0 or Outcome|length>0 %}
+				<div lable='query elements' class="feature-border">
+					<div style="margin-top:10px;margin-bottom:10px;float:left;font-size: 18px;width:100%; text-align: center;">
+						<b>Query </b> &nbsp
+						<div class="far fa-question-circle question" data-toggle="tooltip" data-placement="right"
+						     data-html="true"
+						     title="Break down your need for evidence into searchable keywords according to PIO framework"
+						     style=''></div>
+					</div>
+					<br>
+					<br>
+
+					{% if Participant|length>0 %}
+						<div style="margin-left:45px">Participant:</div>
+
+						{% for i in range(0, Participant|length,2) %}
+							<div class=left_relation> {{ Participant[i] }} &nbsp;</div>
+							<div class="left_entity Participant"> {{ Participant[i+1] }}</div>
+							<br>
+						{% endfor %}
+					{% endif %}
+
+					{% if Intervention|length>0 %}
+
+						<div style=' margin-top:15px; margin-left:45px'>Intervention:</div>
+						{% for i in range(0, Intervention|length,2) %}
+							<div class=left_relation> {{ Intervention[i] }} &nbsp;</div>
+							<div class="left_entity Intervention"> {{ Intervention[i+1] }}</div>
+							<br>
+						{% endfor %}
+					{% endif %}
+
+					{% if Outcome|length>0 %}
+						<div style=' margin-top:15px;margin-left:45px'>Outcome:</div>
+						{% for i in range(0, Outcome|length,2) %}
+							<div class=left_relation> {{ Outcome[i] }} &nbsp;</div>
+							<div class="left_entity Outcome"> {{ Outcome[i+1] }}</div>
+							<br>
+						{% endfor %}
+
+					{% endif %}
+					{% if Participant|length>0 or Intervention|length>0 or Outcome|length>0 %}
+						<form action="/advanced_search_page">
+						<div style='margin-bottom:10px;margin-top: 20px;text-align:center; '><input type='submit'
+						                                                                            value="Modify"
+						                                                                            class='btn'
+						                                                                            style="background:#738391; color:white">
+						</div>
+					{% endif %}
+					</form>
+				</div>
+			{% endif %}
+
+			{% if facet_Participant|length>0 or facet_Intervention|length>0 or facet_Outcome|length>0 %}
+				<div lable='facet elements' class="feature-border">
+					<div style="margin-top:20px;margin-bottom:10px;float:left;font-size: 18px;width:100%;text-align: center;">
+						<b>Filter </b>
+						<div class="far fa-question-circle question" data-toggle="tooltip" data-placement="right"
+						     data-html="true"
+						     title="<p>Here we display all PIO elements mentioned in the retrieved articles with their frequency. </p> Select/unselect to further refine your query"></div>
+					</div>
+
+					<br>
+					<form action="/filter_results">
+						{% if facet_Participant|length>0 %}
+							<div style="margin-top:30px;margin-left:45px">Participant:
+								<div class="far fa-question-circle question" data-toggle="tooltip"
+								     data-placement="right" data-html="true"
+								     title="The most critical characteristics of the enrolled population"></div>
+							</div>
+							{% if facet_Participant|length<6 %}
+
+								{% for i in range(0, facet_Participant|length,2) %}
+									<input type="checkbox" id="facet_term" name="checked_facet_Participant" checked
+									       class='left_check' value='{{ facet_Participant[i] }}'>
+									<div class="left_facets Participant"> {{ facet_Participant[i] }} &nbsp;</div>
+									<div class=left_elements> {{ facet_Participant[i+1] }}</div>
+
+									<br>
+								{% endfor %}
+							{% endif %}
+
+							{% if facet_Participant|length>=6 %}
+								{% for i in range(0, 6,2) %}
+									<input type="checkbox" id="facet_term" name="checked_facet_Participant" checked
+									       class='left_check' value='{{ facet_Participant[i] }}'>
+									<div class="left_facets Participant"> {{ facet_Participant[i] }} &nbsp;</div>
+									<div class=left_elements> {{ facet_Participant[i+1] }}</div>
+
+									<br>
+								{% endfor %}
+
+
+								<div id="accordion">
+									<div id="collapseOne" class="collapse hide" aria-labelledby="headingOne"
+									     data-parent="#accordion">
+
+										{% for i in range(6, facet_Participant|length,2) %}
+											<input type="checkbox" id="facet_term" name="checked_facet_Participant"
+											       checked class='left_check' value='{{ facet_Participant[i] }}'>
+											<div class="left_facets Participant"> {{ facet_Participant[i] }} &nbsp;
+											</div>
+											<div class=left_elements> {{ facet_Participant[i+1] }}</div>
+
+											<br>
+										{% endfor %}
+
+									</div>
+
+									<div id='hide_show' class="collapseHeader ui fluid more" data-toggle="collapse"
+									     data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+										More
+									</div>
+
+								</div>
+							{% endif %}
+
+						{% endif %}
+
+						{% if facet_Intervention|length>0 %}
+							<div style=' margin-top:15px; margin-left:45px'>Intervention:
+								<div class="far fa-question-circle question" data-toggle="tooltip"
+								     data-placement="right" data-html="true"
+								     title="The primary intervention considered, and the intervention compared"></div>
+							</div>
+							{% if facet_Intervention|length<6 %}
+								{% for i in range(0, facet_Intervention|length,2) %}
+									<input type="checkbox" id="facet_term" name="checked_facet_Intervention" checked
+									       class='left_check' value='{{ facet_Intervention[i] }}'>
+									<div class="left_facets Intervention"> {{ facet_Intervention[i] }} &nbsp;</div>
+									<div class=left_elements> {{ facet_Intervention[i+1] }}</div>
+									<br>
+								{% endfor %}
+							{% endif %}
+							{% if facet_Intervention|length>=6 %}
+								{% for i in range(0, 6,2) %}
+									<input type="checkbox" id="facet_term" name="checked_facet_Intervention" checked
+									       class='left_check' value='{{ facet_Intervention[i] }}'>
+									<div class="left_facets Intervention"> {{ facet_Intervention[i] }} &nbsp;</div>
+									<div class=left_elements> {{ facet_Intervention[i+1] }}</div>
+									<br>
+								{% endfor %}
+							{% endif %}
+							<div id="accordion_Intervention">
+								<div id="collapseOne_Intervention" class="collapse hide" aria-labelledby="headingOne"
+								     data-parent="#accordion_Intervention">
+									{% for i in range(6, facet_Intervention|length,2) %}
+										<input type="checkbox" id="facet_term" name="checked_facet_Intervention" checked
+										       class='left_check' value='{{ facet_Intervention[i] }}'>
+										<div class="left_facets Intervention"> {{ facet_Intervention[i] }} &nbsp;</div>
+										<div class=left_elements> {{ facet_Intervention[i+1] }}</div>
+										<br>
+									{% endfor %}
+								</div>
+
+								<div id='hide_show_Intervention' class="collapseHeader ui fluid more"
+								     data-toggle="collapse" data-target="#collapseOne_Intervention" aria-expanded="true"
+								     aria-controls="collapseOne_Intervention">More
+								</div>
+
+							</div>
+						{% endif %}
+
+						{% if facet_Outcome|length>0 %}
+							<div style=' margin-top:15px;margin-left:45px'>Outcome:
+								<div class="far fa-question-circle question" data-toggle="tooltip"
+								     data-placement="right" data-html="true"
+								     title="The anticipated measures, improvements, or effects"></div>
+							</div>
+							{% if facet_Outcome|length<6 %}
+								{% for i in range(0, facet_Outcome|length,2) %}
+									<input type="checkbox" id="facet_term" name="checked_facet_Outcome" checked
+									       class='left_check' value='{{ facet_Outcome[i] }}'>
+									<div class="left_facets Outcome"> {{ facet_Outcome[i] }} &nbsp;</div>
+									<div class=left_elements> {{ facet_Outcome[i+1] }}</div>
+									<br>
+								{% endfor %}
+							{% endif %}
+						{% endif %}
+						{% if facet_Outcome|length>=6 %}
+							{% for i in range(0, 6,2) %}
+								<input type="checkbox" id="facet_term" name="checked_facet_Outcome" checked
+								       class='left_check' value='{{ facet_Outcome[i] }}'>
+								<div class="left_facets Outcome"> {{ facet_Outcome[i] }} &nbsp;</div>
+								<div class=left_elements> {{ facet_Outcome[i+1] }}</div>
+								<br>
+							{% endfor %}
+
+							<div id="accordion_Outcome">
+								<div id="collapseOne_Outcome" class="collapse hide" aria-labelledby="headingOne"
+								     data-parent="#accordion_Outcome">
+									{% for i in range(6, facet_Outcome|length,2) %}
+										<input type="checkbox" id="facet_term" name="checked_facet_Outcome" checked
+										       class='left_check' value='{{ facet_Outcome[i] }}'>
+										<div class="left_facets Outcome"> {{ facet_Outcome[i] }} &nbsp;</div>
+										<div class=left_elements> {{ facet_Outcome[i+1] }}</div>
+										<br>
+
+									{% endfor %}
+								</div>
+
+								<div id='hide_show_Outcome' class="collapseHeader ui fluid more" data-toggle="collapse"
+								     data-target="#collapseOne_Outcome" aria-expanded="true"
+								     aria-controls="collapseOne_Outcome">More
+								</div>
+
+							</div>
+						{% endif %}
+
+						{% if facet_Participant|length>0 or facet_Intervention|length>0 or facet_Outcome|length>0 %}
+							<div style='margin: 0 auto;text-align:center;margin-top: 25px;margin-bottom: 10px; '><input
+									type='submit' value=" Filter Results" class='btn  '
+									style="background:#738391;  color:white"> <a class="uncheckall" href="#"> Uncheck
+								All</a></div>
+						{% endif %}
+					</form>
+				</div>
+			{% endif %}
+
+		</div>
+
+	</div>
+
+	<div style=' margin: 0 auto; width: 55%; display: inline-block;text-align: left; '>
+
+		<div>
+			<div style="margin-top: 20px;display:inline-block; ">{{ num_of_results }}</div>
+			<div style="margin-top: 20px; display:inline-block; float:right; margin-right: 20px;">
+
+				<div class="results-summary-container">
+					<h4>Summary of Results</h4>
+					<div class="summary-box">
+						<p class="summary-text">
+							{% for part in results_summary.summary_parts %}
+								{{ part.text }} 
+								<a href="/visualize/{{ part.doc_id }}" class="source-link">[{{ part.index }}]</a>
+								{% if not loop.last %} {% endif %}
+							{% endfor %}
+						</p>
+					</div>
+				</div>
+
+				<div class="collective-map-container" style="margin-top: 20px; margin-bottom: 20px;">
+					<div style="display: flex; justify-content: space-between; align-items: center;">
+						<h4>Collective Evidence Map</h4>
+						<button onclick="toggleMap()" class="btn btn-sm" style="background:#738391; color:white;">
+							Toggle Map
+						</button>
+					</div>
+					
+					<div id="sankey-chart" style="width: 100%; height: 600px; display: none;">
+						<div class="map-loading" style="text-align: center; padding: 20px;">
+							<div class="spinner-border text-primary" role="status">
+								<span class="sr-only">Loading...</span>
+							</div>
+							<p>Generating Collective Evidence Map...</p>
+						</div>
+						<div class="map-content"></div>
+					</div>
+				</div>
+				
+
+				<form action="/sort_results" id="form-submit">
+					<label>Sorted by:&nbsp;</label>
+					<select name="sort_option" id="sort_option" onchange="singleSelectChangeValue()">
+						{% if option =='best' %}
+							<option id="best" value="best">Best match</option>
+							<option id="recent" value="recent">Most recent</option>
+						{% endif %}
+						{% if option =='recent' %}
+							<option id="recent" value="recent">Most recent</option>
+							<option id="best" value="best">Best match</option>
+						{% endif %}
+					</select>
+					<button type="hidden" value="" style="display: none;"></button>
+				</form>
+			</div>
+
+
+			{% for doc in display_results %}
+				<div style=" margin-top:20px;"><a href="/visualize/{{ doc['doc_id'] }}"
+				                                  style="font-size: 22px;color:#0460c9;">{{ doc['title'] }}</a></div>
+				<div style="display:inline-block;vertical-align: middle; ">
+					{% for author in doc['authors'][0:-1] %}
+						<div style="float:left; display:inline; margin-left:2px "> {{ author }},</div>
+					{% endfor %}
+					<div style="float:left; display:inline; margin-left:2px "> {{ doc['authors'][-1] }}</div>
+				</div>
+				<div style="color: green;margin-top:0px">{{ doc['source'] }}; {{ doc['pubdate'] }}; ({{ doc['volume'] }}): {{ doc['pages'] }}</div>
+
+				<div style="color: green;float:left; display:inline; ">PMID: {{ doc['doc_id'] }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+
+				{% for pubtype in doc['pubtype'] %}
+					<div style="float:left; display:inline; margin-left:2px; color:#ce0000;"> {{ pubtype }}&nbsp;&nbsp;</div>
+				{% endfor %}
+				<br>
+				<div style="font-size: 14px; ">
+					{{ doc['abstract'] }}
+				</div>
+				<!-- {% for abs in doc['abstract'] %}
+               {{ abs }}&nbsp;
+              {% endfor %}  -->
+				...
+				<br>
+
+
+			{% endfor %}
+			<div style="margin: 0 auto;margin-top: 60px;width:50%;">{{ pagination.links }}</div>
+
+		</div>
+
+
+	</div>
+	<div style=' margin: 0 auto; width: 10%;  display: inline-block; '>
+	</div>
+	<div>
+
+		<div class="dimmer">
+			<div class="loader">
+				<div class="lds-facebook" style="height: 60px; ">
+
+					<div style='background:#00BFFF;opacity: 1;'></div>
+					<div style='background:#00BFFF;opacity: 1;'></div>
+					<div style='background:#00BFFF;opacity: 1;'></div>
+
+				</div>
+				<div style=' text-align:center;width: 100%;margin-top: 0px;color: #F0FFFF;'><b>Searching...</b></div>
+
+			</div>
+		</div>
+
+	</div>
+
+	<script type="text/javascript">
+
+        function spinner() {
+            document.getElementsByClassName("loader")[0].style.display = "block";
+            console.log("Spinner triggered")
+        }
+
+        btn = document.getElementById('hide_show')
+        btn.onclick = function () {
+            if (btn.innerHTML == "More") {
+                btn.innerHTML = "Hide"
+            } else {
+                btn.innerHTML = "More"
+            }
+        }
+
+        btn_Intervention = document.getElementById('hide_show_Intervention')
+        btn_Intervention.onclick = function () {
+            if (btn_Intervention.innerHTML == "More") {
+                btn_Intervention.innerHTML = "Hide"
+            } else {
+                btn_Intervention.innerHTML = "More"
+            }
+        }
+
+        btn_Outcome = document.getElementById('hide_show_Outcome')
+        btn_Outcome.onclick = function () {
+            if (btn_Outcome.innerHTML == "More") {
+                btn_Outcome.innerHTML = "Hide"
+            } else {
+                btn_Outcome.innerHTML = "More"
+            }
+        }
+
+
+        function singleSelectChangeValue() {
+            //Getting Value
+            //var selValue = document.getElementById("singleSelectDD").value;
+            var selObj = document.getElementById("sort_option");
+            var selValue = selObj.options[selObj.selectedIndex].value;
+            var form_submit = document.getElementById('form-submit');
+            form_submit.submit()
+            //Setting Value
+            ;
+
+        }
+
+        $(document).ready(function () {
+            // Check All
+            $('.checkall').click(function () {
+                $(":checkbox").attr("checked", true);
+            });
+            // Uncheck All
+            $('.uncheckall').click(function () {
+                $(":checkbox").attr("checked", false);
+
+            });
+        });
+
+        //  window.onload = function() {
+
+        // if '{{option}}'=='best'{
+        //   document.getElementById("sort_option").value='best'
+        //   }else{
+        //     document.getElementById("sort_option").value='recent'
+        //   }
+        // }
+
+
+        // js 获取form表单
+        // var form_submit = document.getElementById('form-submit');
+        // // js获取按钮
+        // var go = document.getElementById('go');
+        // // 当点击go时执行事件
+        // go.addEventListener（'click',function(){
+        //   // 动态给form表单设置请求位置
+        //   form_submit.active = "http://www.daxuehua.cn";
+        //   // 让form表单提交
+        //   form_submit.submit()
+        // }）
+
+
+        // array  = {{ display_results|tojson }};
+
+        // array.sort(function (a, b) {
+        //   var dateA = new Date(a.pubdate), dateB = new Date(b.pubdate)
+        //   return dateB - dateA
+        // });
+
+        // console.log(array) //array is now sorted by date
+
+
+	</script>
+
+	<script src="https://cpwebassets.codepen.io/assets/common/stopExecutionOnTimeout-8216c69d01441f36c0ea791ae2d4469f0f8ff5326f00ae2d00e4bb7d20e24edb.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script id="rendered-js">
+
+        $(function () {
+            var dimmerButton = $('.dim');
+            var dimmer = $('.dimmer');
+
+            dimmerButton.on('click', function () {
+                dimmer.show();
+            });
+
+        });
+        //# sourceURL=pen.js
+
+	</script>
+
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	<script>
+		function toggleMap() {
+			const chart = document.getElementById('sankey-chart');
+			if (chart.style.display === 'none') {
+				chart.style.display = 'block';
+				fetch('/get_collective_map')
+					.then(response => response.json())
+					.then(data => {
+						console.log('Data structure:', data);
+						console.log('Nodes:', data.data[0].node);
+						console.log('Links:', data.data[0].link);
+						Plotly.newPlot('sankey-chart', data.data, data.layout);
+					});
+			} else {
+				chart.style.display = 'none';
+			}
+		}
+	</script>
+
+{% endblock %}

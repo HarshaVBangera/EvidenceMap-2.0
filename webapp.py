@@ -6,10 +6,14 @@ import pickle
 import requests
 from datetime import timedelta
 import time
+from flask import jsonify
+from collections import defaultdict
+import plotly.graph_objects as go
 
 from flask import Flask, render_template, request, session, send_file, after_this_request, redirect, url_for
 from flask_paginate import Pagination, get_page_args
 
+from Website.summary import ResultsSummarizer
 from EvidenceConfig import PALLETE_COLORS
 from EvidenceConfig import SOLR_CONFIG
 from Website.QueryExpand import QueryExpansion
@@ -18,10 +22,8 @@ from Website.pipeline import SentenceClassification, Model, NegationDriver, Prop
 from Website.visualization import *
 from acquire_pubmed import upload_to_solr
 
-print(os.getcwd())
-
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'Website', 'templates'),
-            static_folder=os.path.join(os.path.dirname(__file__), 'Website', 'static'))
+app = Flask(__name__, template_folder=os.path.join(os.getcwd(), 'Website', 'templates'),
+            static_folder=os.path.join(os.getcwd(), 'Website', 'static'))
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
@@ -32,10 +34,12 @@ facet=on&facet.mincount=1&facet.limit=50&facet.sort=count&"
 
 PIO_types = ('Participant', 'Intervention', 'Outcome')
 
+
 @app.route('/')
 def home():
     session.clear()
     return render_template('search.html')
+
 
 @app.route('/main_search')
 def main_search():
@@ -124,23 +128,6 @@ def main_search():
     session['query'] = query.strip("\"")
     session['solr_query'] = solr_query
 
-    response = requests.get(solr_query)
-    results = response.json()
-
-    # Prepare the evidence map for multiple documents
-    evidence_map_data = []
-    for doc in results['response']['docs']:
-        doc_data = {
-            'id': doc['doc_id'],
-            'participants': doc.get('Sentence-level_breakdown.Evidence_Elements.Participant', []),
-            'interventions': doc.get('Sentence-level_breakdown.Evidence_Elements.Intervention', []),
-            'outcomes': doc.get('Sentence-level_breakdown.Evidence_Elements.Outcome', [])
-        }
-        evidence_map_data.append(doc_data)
-
-    # Store evidence map data in session for later use
-    session['evidence_map_data'] = evidence_map_data
-
     return display_by_pages(query, solr_query, PIO_input_dict['Participant'], PIO_input_dict['Intervention'],
                             PIO_input_dict['Outcome'])
 
@@ -160,6 +147,7 @@ def advanced_search():
             temp_query = ''
 
             PIO_input_dict[p] = request.args.get(p).split(',')
+
             PIO_input_dict[p][0] = ''
 
             for i in range(0, len(PIO_input_dict[p]), 2):
@@ -168,12 +156,13 @@ def advanced_search():
                     temp_query += " " + PIO_input_dict[p][i].strip() + " "
 
                 # Query expansion
+
                 term = PIO_input_dict[p][i + 1].strip()
+
                 query_terms.append(term)
                 expanded_query = query_expansion(term)
                 if term not in expanded_query:
                     expanded_query.append(term)
-
                 print(expanded_query)
                 expanded_temp_query = "("
                 for idx, word in enumerate(expanded_query):
@@ -200,24 +189,6 @@ def advanced_search():
     query = ' '.join(query_terms)
     session['query'] = query
 
-    # Execute the Solr query and get results
-    response = requests.get(solr_query)
-    results = response.json()
-
-    # Prepare the evidence map for multiple documents
-    evidence_map_data = []
-    for doc in results['response']['docs']:
-        doc_data = {
-            'id': doc['doc_id'],
-            'participants': doc.get('Sentence-level_breakdown.Evidence_Elements.Participant', []),
-            'interventions': doc.get('Sentence-level_breakdown.Evidence_Elements.Intervention', []),
-            'outcomes': doc.get('Sentence-level_breakdown.Evidence_Elements.Outcome', [])
-        }
-        evidence_map_data.append(doc_data)
-
-    # Store evidence map data in session for later use
-    session['evidence_map_data'] = evidence_map_data
-
     return display_by_pages(query, solr_query, PIO_input_dict['Participant'], PIO_input_dict['Intervention'],
                             PIO_input_dict['Outcome'])
 
@@ -227,24 +198,16 @@ def advanced():
     Participant_list = session.get('Participant')
     Intervention_list = session.get('Intervention')
     Outcome_list = session.get('Outcome')
-    
-    # Retrieve the evidence map data from the session
-    evidence_map_data = session.get('evidence_map_data', [])
-    
-    return render_template('advanced.html', 
-                           Participant_list=Participant_list, 
-                           Intervention_list=Intervention_list,
-                           Outcome_list=Outcome_list, 
-                           evidence_map_data=evidence_map_data,  # Pass evidence map data to the template
-                           color_pallette=PALLETE_COLORS)
+    return render_template('advanced.html', Participant_list=Participant_list, Intervention_list=Intervention_list,
+                           Outcome_list=Outcome_list, color_pallette=PALLETE_COLORS)
 
 
 @app.route('/introduction')
 def advanintroductionced():
     return render_template('introduction.html')
 
-def reparse_docs(docs, query_args):
-    results = []  # To store the results for each document
+
+def reparse_doc(doc, query_args):
     try:
         pipeline_start = query_args['parsepoint']
     except:
@@ -252,7 +215,6 @@ def reparse_docs(docs, query_args):
 
     print(f"Reparse Query Args: {query_args}")
 
-    # Process configurations for drivers
     for key in query_args.keys():
         if key in ['SentenceClassification', 'Models', 'Negations', 'Propositions', 'EvidenceMap']:
             for argument, value in query_args[key].items():
@@ -267,265 +229,258 @@ def reparse_docs(docs, query_args):
                 elif key == 'EvidenceMap':
                     EvidenceMapDriver.driver_config[argument] = value
 
-    # Process each document
-    for doc in docs:
-        metadata, predictions, pmid, abstract_text, has_complete_entities, has_complete_negations, has_complete_propositions, has_complete_tags, has_complete_map = EvidenceMapDriver.deconstruct_json(doc)
+    metadata, predictions, pmid, abstract_text, has_complete_entities, has_complete_negations, has_complete_propositions, has_complete_tags, has_complete_map = EvidenceMapDriver.deconstruct_json(
+        doc)
 
-        if pipeline_start == 'sent_classification':
-            has_complete_tags = False
-            has_complete_entities = False
-            has_complete_negations = False
-            has_complete_propositions = False
-            has_complete_map = False
-        elif pipeline_start == 'entity_recognition':
-            has_complete_entities = False
-            has_complete_propositions = False
-            has_complete_negations = False
-            has_complete_map = False
-        elif pipeline_start == 'negation_detection':
-            has_complete_negations = False
-            has_complete_propositions = False
-            has_complete_map = False
-        elif pipeline_start == 'proposition_extraction':
-            has_complete_propositions = False
-            has_complete_map = False
-        elif pipeline_start == 'map_construction':
-            has_complete_map = False
+    if pipeline_start == 'sent_classification':
+        has_complete_tags = False
+        has_complete_entities = False
+        has_complete_negations = False
+        has_complete_propositions = False
+        has_complete_map = False
+    elif pipeline_start == 'entity_recognition':
+        has_complete_entities = False
+        has_complete_propositions = False
+        has_complete_negations = False
+        has_complete_map = False
+    elif pipeline_start == 'negation_detection':
+        has_complete_negations = False
+        has_complete_propositions = False
+        has_complete_map = False
+    elif pipeline_start == 'proposition_extraction':
+        has_complete_propositions = False
+        has_complete_map = False
+    elif pipeline_start == 'map_construction':
+        has_complete_map = False
 
-        if not has_complete_tags:
-            predictions = Model.predictBodyOfText(abstract_text, flatten=True, split_newlines=True,
-                                                  SentenceClassificationDriver=SentenceClassification)
-            has_complete_tags = True
-            has_complete_entities = True
-            has_complete_negations = False
-            has_complete_propositions = False
-            has_complete_map = False
-        elif not has_complete_entities or not has_complete_propositions:
-            predictions_tmp = Model.predictBodyOfText(abstract_text, flatten=True, split_newlines=True)
+    if not has_complete_tags:
+        predictions = Model.predictBodyOfText(abstract_text, flatten=True, split_newlines=True,
+                                              SentenceClassificationDriver=SentenceClassification)
+        has_complete_tags = True
+        has_complete_entities = True
+        has_complete_negations = False
+        has_complete_propositions = False
+        has_complete_map = False
+    elif not has_complete_entities or not has_complete_propositions:
+        predictions_tmp = Model.predictBodyOfText(abstract_text, flatten=True, split_newlines=True)
 
-            # Re-align sentence tags to the new predictions
-            i = 0
-            j = 0
+        # Re-align sentence tags to the new predictions
+        i = 0
+        j = 0
 
-            while i < len(predictions) and j < len(predictions_tmp):
-                sentence = predictions[i]['tokens']
-                sentence = ''.join(sentence)
-                sentence_tmp = predictions_tmp[j]['tokens']
-                sentence_tmp = ''.join(sentence_tmp)
+        while i < len(predictions) and j < len(predictions_tmp):
+            sentence = predictions[i]['tokens']
+            sentence = ''.join(sentence)
+            sentence_tmp = predictions_tmp[j]['tokens']
+            sentence_tmp = ''.join(sentence_tmp)
+            repeat_flag = False
+
+            if sentence == sentence_tmp:
+                predictions_tmp[j]['tag'] = predictions[i]['tag']
+                i += 1
+                j += 1
+                repeat_flag = False
+            elif not sentence:
+                i += 1
+            elif not sentence_tmp:
+                j += 1
+                repeat_flag = False
+            elif sentence in sentence_tmp:
+                if not repeat_flag:
+                    predictions_tmp[j]['tag'] = predictions[i]['tag']
+                    repeat_flag = True
+                i += 1
+            elif sentence_tmp in sentence:
+                predictions_tmp[j]['tag'] = predictions[i]['tag']
+                j += 1
+                repeat_flag = False
+            else:
+                print("Reparse Warn: Possible reconciliation error, article should be processed from scratch." )
+                predictions_tmp[j]['tag'] = predictions[i]['tag']
+                i += 1
+                j += 1
                 repeat_flag = False
 
-                if sentence == sentence_tmp:
-                    predictions_tmp[j]['tag'] = predictions[i]['tag']
-                    i += 1
-                    j += 1
-                    repeat_flag = False
-                elif not sentence:
-                    i += 1
-                elif not sentence_tmp:
-                    j += 1
-                    repeat_flag = False
-                elif sentence in sentence_tmp:
-                    if not repeat_flag:
-                        predictions_tmp[j]['tag'] = predictions[i]['tag']
-                        repeat_flag = True
-                    i += 1
-                elif sentence_tmp in sentence:
-                    predictions_tmp[j]['tag'] = predictions[i]['tag']
-                    j += 1
-                    repeat_flag = False
-                else:
-                    print("Reparse Warn: Possible reconciliation error, article should be processed from scratch.")
-                    predictions_tmp[j]['tag'] = predictions[i]['tag']
-                    i += 1
-                    j += 1
-                    repeat_flag = False
+            if i == len(predictions) or j == len(predictions_tmp):
+                predictions = predictions_tmp
+                has_complete_entities = True
+                has_complete_negations = False
+                has_complete_propositions = False
+                has_complete_map = False
 
-                if i == len(predictions) or j == len(predictions_tmp):
-                    predictions = predictions_tmp
-                    has_complete_entities = True
-                    has_complete_negations = False
-                    has_complete_propositions = False
-                    has_complete_map = False
+    if not has_complete_negations:
+        predictions = NegationDriver.detectNegations(predictions)
+        has_complete_negations = True
 
-        if not has_complete_negations:
-            predictions = NegationDriver.detectNegations(predictions)
-            has_complete_negations = True
+        if has_complete_propositions:
+            for prediction in predictions:
+                for proposition in prediction['propositions']:
+                    if proposition['Observation'] is not None:
+                        proposition['negation'] = proposition['Observation']['negation_status']
+                    elif proposition['Count'] is not None:
+                        proposition['negation'] = proposition['Count']['negation_status']
 
-            if has_complete_propositions:
-                for prediction in predictions:
-                    for proposition in prediction['propositions']:
-                        if proposition['Observation'] is not None:
-                            proposition['negation'] = proposition['Observation']['negation_status']
-                        elif proposition['Count'] is not None:
-                            proposition['negation'] = proposition['Count']['negation_status']
+    if not has_complete_propositions:
+        predictions = PropositionDriver.buildPropositions(predictions)
+        has_complete_propositions = True
 
-        if not has_complete_propositions:
-            predictions = PropositionDriver.buildPropositions(predictions)
-            has_complete_propositions = True
+    if not has_complete_map:
+        start_overall = time.perf_counter()
+        start_cluster = time.perf_counter()
+        predictions, proposed_arms = EvidenceMapDriver.fit_propositions(predictions, print_output=True)
+        cluster_time = time.perf_counter() - start_cluster
+        ([participants, _, _], EvidenceMap) = EvidenceMapDriver.build_map(predictions, proposed_arms, print_output=True)
+        json = EvidenceMapDriver.build_json(participants, EvidenceMap, metadata, predictions, pmid, abstract_text)
+        overall_time = time.perf_counter() - start_overall
 
-        if not has_complete_map:
-            start_overall = time.perf_counter()
-            start_cluster = time.perf_counter()
-            predictions, proposed_arms = EvidenceMapDriver.fit_propositions(predictions, print_output=True)
-            cluster_time = time.perf_counter() - start_cluster
-            ([participants, _, _], EvidenceMap) = EvidenceMapDriver.build_map(predictions, proposed_arms, print_output=True)
-            json_data = EvidenceMapDriver.build_json(participants, EvidenceMap, metadata, predictions, pmid, abstract_text)
-            overall_time = time.perf_counter() - start_overall
+        print( f"Level 3: Average clustering time: {cluster_time:.4f} ms/abstract")
+        print( f"Level 3: Average overall time: {overall_time:.4f} ms/abstract")
 
-            print(f"Level 3: Average clustering time: {cluster_time:.4f} ms/abstract")
-            print(f"Level 3: Average overall time: {overall_time:.4f} ms/abstract")
+        solr_url = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core']
+        upload_to_solr(solr_url, json)
+        has_complete_map = True
+        commit_response = requests.get(f'{solr_url}/update?commit=true')
+        if commit_response.status_code != 200:
+            print(f'Commit failed with status code {commit_response.status_code}: {commit_response.text}')
 
-            solr_url = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core']
-            upload_to_solr(solr_url, json_data)
-            has_complete_map = True
-            commit_response = requests.get(f'{solr_url}/update?commit=true')
-            if commit_response.status_code != 200:
-                print(f'Commit failed with status code {commit_response.status_code}: {commit_response.text}')
-
-        results.append(json_data)  # Store the result for the document
-
-    return results  # Return the list of results for all documents
+    return doc
 
 
-@app.route('/visualize', methods=['GET', 'POST'])
-def visualize():
-    ids = request.args.getlist('id')  # Get a list of IDs from the query parameters
+@app.route('/visualize/<string:id>', methods=['GET', 'POST'])
+def visualize(id, no_args=False):
     Participant_list = session.get('Participant') or ""
     Intervention_list = session.get('Intervention') or ""
     Outcome_list = session.get('Outcome') or ""
 
     query = session.get('query')
+
     if query is None:
         query = ''
 
-    results = []  # List to store results for each document
+    solr_address = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core'] + "/select?rows=100000&fl=*,score&q="
+    solr_query = solr_address + "doc_id:" + id
 
-    for id in ids:
-        solr_address = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core'] + "/select?rows=100000&fl=*,score&q="
-        solr_query = solr_address + "doc_id:" + id
+    print(f"Issuing Solr Query: {solr_query}")
 
-        print(f"Issuing Solr Query: {solr_query}")
+    myobj = {'somekey': 'somevalue'}
+    response = requests.post(solr_query + "&fl=numFound", data=myobj)
+    results = json.loads(response.text)
+    docs = results['response']['docs']
+    doc = docs[0]
 
-        myobj = {'somekey': 'somevalue'}
-        response = requests.post(solr_query + "&fl=numFound", data=myobj)
-        results_json = json.loads(response.text)
-        docs = results_json['response']['docs']
+    action_arg = request.args.get('action')
 
-        if docs:  # Check if any documents are returned
-            doc = docs[0]  # Get the first document
+    original_doc = solr_unflatten(doc)
 
-            original_doc = solr_unflatten(doc)
+    if not no_args:
+        if action_arg == 'reparse':
+            params = {}
+            for key in request.args.keys():
+                value = request.args.get(key)
+                if '.' in key:
+                    primary, secondary = key.split('.', 1)
+                    if primary not in params:
+                        params[primary] = {}
+                    params[primary][secondary] = value
+                elif key in ['parsepoint']:
+                    params[key] = value
 
-            action_arg = request.args.get('action')
+            reparse_doc(original_doc, params)
 
-            if action_arg == 'reparse':
-                params = {}
-                for key in request.args.keys():
-                    value = request.args.get(key)
-                    if '.' in key:
-                        primary, secondary = key.split('.', 1)
-                        if primary not in params:
-                            params[primary] = {}
-                        params[primary][secondary] = value
-                    elif key in ['parsepoint']:
-                        params[key] = value
+            return visualize(id, True)
 
-                reparse_doc(original_doc, params)
+    data = clean_data(original_doc)
+    level3_data, num_arm, level3_provider = extract_level3(original_doc)
 
-                # Re-fetch the document after reparse
-                continue
+    temp = {}
+    temp['doc_id'] = id
+    temp['title'] = doc['title'][0].strip('.')
+    if 'publication_metadata.pubdate' in doc:
+        temp['pubdate'] = doc['publication_metadata.pubdate'][0]
+    else:
+        temp['pubdate'] = ""
 
-            data = clean_data(original_doc)
-            level3_data, num_arm, level3_provider = extract_level3(original_doc)
+    if 'publication_metadata.source' in doc:
+        temp['source'] = doc['publication_metadata.source'][0]
+    else:
+        temp['source'] = ""
 
-            temp = {
-                'doc_id': id,
-                'title': doc['title'][0].strip('.'),
-                'pubdate': doc.get('publication_metadata.pubdate', [""])[0],
-                'source': doc.get('publication_metadata.source', [""])[0],
-                'volume': doc.get('publication_metadata.volume', [""])[0],
-                'pages': doc.get('publication_metadata.pages', [""])[0],
-                'pubtype': doc.get('publication_metadata.pubtype', []),
-                'authors': doc.get('publication_metadata.authors', [])
-            }
+    if 'publication_metadata.volume' in doc:
+        temp['volume'] = doc['publication_metadata.volume'][0]
+    else:
+        temp['volume'] = ""
 
-            # Append the results for this document
-            results.append({
-                'data': data,
-                'metadata': temp,
-                'level3_data': level3_data,
-                'num_arm': num_arm,
-                'level3_provider': level3_provider
-            })
+    if 'publication_metadata.pages' in doc:
+        temp['pages'] = doc['publication_metadata.pages'][0]
+    else:
+        temp['pages'] = ""
 
-    return render_template('annotation.html', query=query, results=results,
-                           Participant=Participant_list, Intervention=Intervention_list, Outcome=Outcome_list,
-                           color_pallette=PALLETE_COLORS)
+    if 'publication_metadata.pubtype' in doc:
+        temp['pubtype'] = doc['publication_metadata.pubtype']
+    else:
+        temp['pubtype'] = []
 
-@app.route('/download', methods=['GET', 'POST'])
-def download():
-    ids = request.args.getlist('id')  # Get a list of IDs from the query parameters
-    all_docs = []
+    if 'publication_metadata.authors' in doc:
+        temp['authors'] = doc['publication_metadata.authors']
+    else:
+        temp['authors'] = []
+
+    return render_template('annotation.html', query=query, data=data, metadata=temp, Participant=Participant_list, \
+                           Intervention=Intervention_list, Outcome=Outcome_list, level3_data=level3_data,
+                           num_arm=num_arm, color_pallette=PALLETE_COLORS, level3_provider=level3_provider)
+
+
+
+@app.route('/download/<string:id>', methods=['GET', 'POST'])
+def download(id):
+    @after_this_request
+    def remove_file(response):
+        try:
+            os.remove(file_name)
+        except Exception as error:
+            app.logger.error("Error removing or closing downloaded file handle", error)
+        return response
 
     solr_address = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core'] + "/select?rows=100000&fl=*,score&q="
+    solr_query = solr_address + "doc_id:" + id
 
-    for id in ids:
-        solr_query = solr_address + "doc_id:" + id
+    myobj = {'somekey': 'somevalue'}
+    response = requests.post(solr_query + "&fl=numFound", data=myobj)
+    results = json.loads(response.text)
+    docs = results['response']['docs']
+    doc = docs[0]
 
-        myobj = {'somekey': 'somevalue'}
-        response = requests.post(solr_query + "&fl=numFound", data=myobj)
-        results = json.loads(response.text)
-        docs = results['response']['docs']
+    original_doc = solr_unflatten(doc)
+    output = json.dumps(original_doc, indent=4)
 
-        if docs:  # Check if any documents are returned
-            doc = docs[0]
-            original_doc = solr_unflatten(doc)
-            all_docs.append(original_doc)
-
-    output = json.dumps(all_docs, indent=4)  # Serialize all documents to JSON format
-
-    file_name = 'documents.json'  # Name of the output file
+    file_name = id + '.json'
     file_path = os.path.join(os.path.dirname(__file__), file_name)
 
     with open(file_path, 'w') as file:
         file.write(output)
 
-    @after_this_request
-    def remove_file(response):
-        try:
-            os.remove(file_path)  # Remove the file after sending it
-        except Exception as error:
-            app.logger.error("Error removing or closing downloaded file handle", error)
-        return response
-
-    return send_file(file_path, as_attachment=True)  # Send the JSON file as an attachment
+    return send_file(file_path, as_attachment=True)
 
 
 @app.route('/sort_results')
 def sort_results():
-    option = request.args.get('sort_option')  # Get the sorting option from the query parameters
-    print(f"Sorting by: {option}")
+    option = request.args.get('sort_option')
+    print(option)
 
-    query = session.get('query')  # Retrieve the stored query from the session
-    solr_query = session.get('solr_query')  # Retrieve the Solr query from the session
+    query = session.get('query')
+    solr_query = session.get('solr_query')
 
-    # Retrieve previously selected options from the session
     Participant_list = session.get('Participant')
     Intervention_list = session.get('Intervention')
     Outcome_list = session.get('Outcome')
+    return display_by_pages(query, solr_query, Participant_list, Intervention_list, Outcome_list, option)
 
-    # Check if a valid sort option is provided
-    if option:
-        # Modify the Solr query to include sorting
-        solr_query += f"&sort={option}"  # Append sort option to the existing Solr query
-
-    # Call the function to display results, potentially sorted
-    return display_by_pages(query, solr_query, Participant_list, Intervention_list, Outcome_list)
 
 def query_expansion(term):
     QE = QueryExpansion()
     qs = QE.expand(term)
     return qs
+
 
 def display_by_pages(query, solr_query, Participant_list, Intervention_list, Outcome_list, option="best"):
     print(f"Issuing Solr Query: {solr_query}")
@@ -580,8 +535,10 @@ def display_by_pages(query, solr_query, Participant_list, Intervention_list, Out
     # If we only have one result, go straight to the visualization page
     if numFound == 1:
         return redirect(url_for('visualize', id=docs[0]['doc_id']))
-
+    
+    
     for doc in docs:
+    
         temp = {}
         doc_id = str(doc['doc_id'])
         temp['doc_id'] = doc_id
@@ -638,13 +595,20 @@ def display_by_pages(query, solr_query, Participant_list, Intervention_list, Out
     file_path = os.path.join(dir_path, f"{facet_file_name}.pkl")
     with open(file_path, 'wb') as file:
         pickle.dump(facet_dict, file)
+    
+    summarizer = ResultsSummarizer()
+    results_summary = summarizer.generate_summary(display_results)
+    docs = fetch_all_documents(solr_query)
+    aggregated_data = aggregate_evidence_data(docs)
+    collective_map = generate_collective_visualization(aggregated_data)
 
     return render_template('result_page.html', query=query.strip("\""), display_results=display_results,
-                           num_of_results=num_of_results,
+                           results_summary=results_summary,collective_map=collective_map, num_of_results=num_of_results,
                            Participant=Participant_list, Intervention=Intervention_list, Outcome=Outcome_list,
                            page=page, per_page=per_page, pagination=pagination, facet_Participant=facet_Participant,
                            facet_Intervention=facet_Intervention, facet_Outcome=facet_Outcome,
                            option=option, color_pallette=PALLETE_COLORS)
+
 
 @app.route('/filter_results')
 def filter_results():
@@ -683,8 +647,9 @@ def filter_results():
 
     return display_by_pages(query, solr_query, Participant_list, Intervention_list, Outcome_list)
 
+
 def facet_normalize(original_facet_list, PIO_type):
-    
+    # We might want to replace this with the implemented EvidenceMap clustering algorithm
     processor = facetprocessor([], [], [])
     if PIO_type == 'Participant' or 'Outcome':
         merged_facet_sorted, merged_facet = processor.process_p_o(original_facet_list)
@@ -692,6 +657,7 @@ def facet_normalize(original_facet_list, PIO_type):
         merged_facet_sorted, merged_facet = processor.process_intervention(original_facet_list)
 
     return merged_facet, merged_facet_sorted
+
 
 def abstract_format(abstract, max_length=350):
     abstract_all = ''
@@ -713,18 +679,249 @@ def abstract_format(abstract, max_length=350):
                 max_length = max_length - 1
         return abstract_all[0:max_length]
 
+
 def parse(input_text):
     abstract_text = [input_text]
     _, predictions = Model.predictBodyOfText(abstract_text, flatten=True, split_newlines=True)
 
     return predictions
 
+
 def solr_unflatten(json_obj):
     payload = json_obj["payload"][0]
     json_obj = json.loads(lzma.decompress(base64.b64decode(payload.encode())))
     return json_obj
 
+
+@app.route('/get_collective_map')
+def get_collective_map():
+    # Get the current solr query from session
+    solr_query = session.get('solr_query')
+    if not solr_query:
+        solr_query = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core'] + "/select?rows=100000&fl=*,score&q=*:*"
+    
+    # Fetch documents
+    print(f"Current Solr Query: {solr_query}")
+    docs = fetch_all_documents(solr_query)
+    print(f"Number of documents fetched: {len(docs)}")
+    
+    # Aggregate evidence data
+    aggregated_data = aggregate_evidence_data(docs)
+    
+    # Create node lists
+    participants = list(aggregated_data['participants'].keys())
+    interventions = list(aggregated_data['interventions'].keys())
+    outcomes = list(aggregated_data['outcomes'].keys())
+    
+    # Create node labels and colors
+    all_labels = participants + interventions + outcomes
+    node_colors = (
+        ['#1f77b4'] * len(participants) +  # Blue for participants
+        ['#ff7f0e'] * len(interventions) +  # Orange for interventions
+        ['#2ca02c'] * len(outcomes)         # Green for outcomes
+    )
+    
+    # Create links
+    sources = []
+    targets = []
+    values = []
+    
+    # Connect participants to interventions
+    for i, p in enumerate(participants):
+        for j, inv in enumerate(interventions):
+            if aggregated_data['participants'][p] > 0:
+                sources.append(i)
+                targets.append(len(participants) + j)
+                values.append(aggregated_data['participants'][p])
+    
+    # Connect interventions to outcomes
+    for i, inv in enumerate(interventions):
+        for j, out in enumerate(outcomes):
+            if aggregated_data['interventions'][inv] > 0:
+                sources.append(len(participants) + i)
+                targets.append(len(participants) + len(interventions) + j)
+                values.append(aggregated_data['interventions'][inv])
+    
+    data = {
+        'data': [{
+            'type': 'sankey',
+            'node': {
+                'pad': 15,
+                'thickness': 20,
+                'line': {'color': 'black', 'width': 0.5},
+                'label': all_labels,
+                'color': node_colors
+            },
+            'link': {
+                'source': sources,
+                'target': targets,
+                'value': values
+            }
+        }],
+        'layout': {
+            'title': 'Evidence Flow Diagram',
+            'font': {'size': 12},
+            'width': 800,
+            'height': 600
+        }
+    }
+    
+    return jsonify(data)
+
+def fetch_all_documents(solr_query):
+    myobj = {'somekey': 'somevalue'}
+    response = requests.post(solr_query + "&rows=1000", data=myobj)
+    results = json.loads(response.text)
+    
+    if 'response' not in results:
+        print(f"Solr Query: {solr_query}")
+        print(f"Response: {results}")
+        return []
+        
+    return results['response']['docs']
+
+def aggregate_evidence_data(docs):
+    aggregated_data = defaultdict(lambda: defaultdict(int))
+    
+    for doc in docs:
+        level3_data, _, _ = extract_level3(solr_unflatten(doc))
+        
+        # Extract participants
+        for participant in level3_data.get('participants', []):
+            if not participant.get('negation', False):  # Only include non-negated terms
+                aggregated_data['participants'][participant['term']] += 1
+        
+        # Extract interventions from study_design and study_results
+        for item in level3_data.get('study_design', []) + level3_data.get('study_results', []):
+            if item.get('type') == 'Intervention':
+                aggregated_data['interventions'][item['term']] += 1
+                
+        # Extract outcomes from study_design and study_results
+        for item in level3_data.get('study_design', []) + level3_data.get('study_results', []):
+            if item.get('type') == 'Outcome':
+                aggregated_data['outcomes'][item['term']] += 1
+    
+    return aggregated_data
+
+from difflib import SequenceMatcher
+from nltk.corpus import wordnet
+
+def calculate_similarity(term1, term2):
+    # String similarity
+    string_similarity = SequenceMatcher(None, term1.lower(), term2.lower()).ratio()
+    
+    # WordNet similarity
+    try:
+        synsets1 = wordnet.synsets(term1)
+        synsets2 = wordnet.synsets(term2)
+        if synsets1 and synsets2:
+            wordnet_similarity = synsets1[0].path_similarity(synsets2[0]) or 0
+        else:
+            wordnet_similarity = 0
+    except:
+        wordnet_similarity = 0
+    
+    # Combined similarity score
+    return max(string_similarity, wordnet_similarity)
+
+def generate_collective_visualization(aggregated_data):
+
+    def calculate_relevance_score(term, count, query_terms):
+        # Higher score for terms that match query terms
+        query_relevance = sum(calculate_similarity(term, q_term) for q_term in query_terms)
+        # Combine with frequency count
+        return (query_relevance * 0.7) + (count * 0.3)  # Weighted combination
+    
+    # Get query terms from session
+    query = session.get('query', '').lower().split()
+    
+    # Score and sort elements by relevance
+    TOP_N = 2
+    
+    # Get most relevant items from each category
+    participants = dict(sorted(
+        aggregated_data['participants'].items(),
+        key=lambda x: calculate_relevance_score(x[0], x[1], query),
+        reverse=True
+    )[:TOP_N])
+    
+    interventions = dict(sorted(
+        aggregated_data['interventions'].items(),
+        key=lambda x: calculate_relevance_score(x[0], x[1], query),
+        reverse=True
+    )[:TOP_N])
+    
+    outcomes = dict(sorted(
+        aggregated_data['outcomes'].items(),
+        key=lambda x: calculate_relevance_score(x[0], x[1], query),
+        reverse=True
+    )[:TOP_N])
+    # Create nodes for each category
+    nodes = []
+    node_colors = []
+    
+    # Add participants (blue)
+    participant_nodes = list(participants.keys())
+    nodes.extend(participant_nodes)
+    node_colors.extend(['#1f77b4'] * len(participant_nodes))
+    
+    # Add interventions (orange)
+    intervention_nodes = list(interventions.keys())
+    nodes.extend(intervention_nodes)
+    node_colors.extend(['#ff7f0e'] * len(intervention_nodes))
+    
+    # Add outcomes (green)
+    outcome_nodes = list(outcomes.keys())
+    nodes.extend(outcome_nodes)
+    node_colors.extend(['#2ca02c'] * len(outcome_nodes))
+    
+    # Create connections
+    sources = []
+    targets = []
+    values = []
+    
+    # Connect participants to interventions
+    for p_idx, participant in enumerate(participant_nodes):
+        for i_idx, intervention in enumerate(intervention_nodes):
+            sources.append(p_idx)
+            targets.append(len(participant_nodes) + i_idx)
+            values.append(aggregated_data['participants'][participant])
+    
+    # Connect interventions to outcomes
+    for i_idx, intervention in enumerate(intervention_nodes):
+        for o_idx, outcome in enumerate(outcome_nodes):
+            sources.append(len(participant_nodes) + i_idx)
+            targets.append(len(participant_nodes) + len(intervention_nodes) + o_idx)
+            values.append(aggregated_data['interventions'][intervention])
+    
+    return {
+        'data': [{
+            'type': 'sankey',
+            'node': {
+                'pad': 30,
+                'thickness': 20,
+                'line': {'color': 'black', 'width': 0.5},
+                'label': nodes,
+                'color': node_colors
+            },
+            'link': {
+                'source': sources,
+                'target': targets,
+                'value': values
+            }
+        }],
+        'layout': {
+            'title': 'Combined Evidence Flow',
+            'font': {'size': 14},
+            'width': 1200,
+            'height': 600,
+            'margin': {'t': 40, 'b': 40, 'l': 50, 'r': 50}
+        }
+    }
+
+print("Registered Routes:")
+for rule in app.url_map.iter_rules():
+    print(f"{rule.endpoint}: {rule.rule}")
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
-
-
