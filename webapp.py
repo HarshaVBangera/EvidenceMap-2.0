@@ -8,7 +8,8 @@ from datetime import timedelta
 import time
 from flask import jsonify
 from collections import defaultdict
-import plotly.graph_objects as go
+import urllib.parse
+
 
 from flask import Flask, render_template, request, session, send_file, after_this_request, redirect, url_for
 from flask_paginate import Pagination, get_page_args
@@ -48,7 +49,7 @@ def main_search():
     else:
         query = request.args.get('Query').strip().strip('"')
 
-    print(f"Processing Query: {query}")
+    
     solr_address = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core'] + "/select?" + facet + "fl=*,score&q="
     prefix = "Sentence-level_breakdown.Evidence_Elements."
     PIO_input_dict = {}
@@ -360,8 +361,7 @@ def visualize(id, no_args=False):
     solr_address = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core'] + "/select?rows=100000&fl=*,score&q="
     solr_query = solr_address + "doc_id:" + id
 
-    print(f"Issuing Solr Query: {solr_query}")
-
+    
     myobj = {'somekey': 'somevalue'}
     response = requests.post(solr_query + "&fl=numFound", data=myobj)
     results = json.loads(response.text)
@@ -483,7 +483,7 @@ def query_expansion(term):
 
 
 def display_by_pages(query, solr_query, Participant_list, Intervention_list, Outcome_list, option="best"):
-    print(f"Issuing Solr Query: {solr_query}")
+    
 
     myobj = {'somekey': 'somevalue'}
     response = requests.post(solr_query + "&fl=numFound", data=myobj)
@@ -599,11 +599,11 @@ def display_by_pages(query, solr_query, Participant_list, Intervention_list, Out
     summarizer = ResultsSummarizer()
     results_summary = summarizer.generate_summary(display_results)
     docs = fetch_all_documents(solr_query)
-    aggregated_data = aggregate_evidence_data(docs)
-    collective_map = generate_collective_visualization(aggregated_data)
+    
+    collective_map = collective_visualize()
 
-    return render_template('result_page.html', query=query.strip("\""), display_results=display_results,
-                           results_summary=results_summary,collective_map=collective_map, num_of_results=num_of_results,
+    return render_template('result_page.html', query=query.strip("\""), display_results=display_results,results_summary=results_summary,
+                           collective_map=collective_map, num_of_results=num_of_results,
                            Participant=Participant_list, Intervention=Intervention_list, Outcome=Outcome_list,
                            page=page, per_page=per_page, pagination=pagination, facet_Participant=facet_Participant,
                            facet_Intervention=facet_Intervention, facet_Outcome=facet_Outcome,
@@ -693,80 +693,73 @@ def solr_unflatten(json_obj):
     return json_obj
 
 
-@app.route('/get_collective_map')
-def get_collective_map():
-    # Get the current solr query from session
+@app.route('/visualize/collective')
+def collective_visualize():
+    Participant_list = session.get('Participant') or ""
+    Intervention_list = session.get('Intervention') or ""
+    Outcome_list = session.get('Outcome') or ""
     solr_query = session.get('solr_query')
     if not solr_query:
         solr_query = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core'] + "/select?rows=100000&fl=*,score&q=*:*"
     
     # Fetch documents
     print(f"Current Solr Query: {solr_query}")
-    docs = fetch_all_documents(solr_query)
-    print(f"Number of documents fetched: {len(docs)}")
     
-    # Aggregate evidence data
-    aggregated_data = aggregate_evidence_data(docs)
+
+    myobj = {'somekey': 'somevalue'}
+    response = requests.post(solr_query + "&fl=numFound", data=myobj)
+    results = json.loads(response.text)
+    docs = results['response']['docs']
     
-    # Create node lists
-    participants = list(aggregated_data['participants'].keys())
-    interventions = list(aggregated_data['interventions'].keys())
-    outcomes = list(aggregated_data['outcomes'].keys())
-    
-    # Create node labels and colors
-    all_labels = participants + interventions + outcomes
-    node_colors = (
-        ['#1f77b4'] * len(participants) +  # Blue for participants
-        ['#ff7f0e'] * len(interventions) +  # Orange for interventions
-        ['#2ca02c'] * len(outcomes)         # Green for outcomes
-    )
-    
-    # Create links
-    sources = []
-    targets = []
-    values = []
-    
-    # Connect participants to interventions
-    for i, p in enumerate(participants):
-        for j, inv in enumerate(interventions):
-            if aggregated_data['participants'][p] > 0:
-                sources.append(i)
-                targets.append(len(participants) + j)
-                values.append(aggregated_data['participants'][p])
-    
-    # Connect interventions to outcomes
-    for i, inv in enumerate(interventions):
-        for j, out in enumerate(outcomes):
-            if aggregated_data['interventions'][inv] > 0:
-                sources.append(len(participants) + i)
-                targets.append(len(participants) + len(interventions) + j)
-                values.append(aggregated_data['interventions'][inv])
-    
-    data = {
-        'data': [{
-            'type': 'sankey',
-            'node': {
-                'pad': 15,
-                'thickness': 20,
-                'line': {'color': 'black', 'width': 0.5},
-                'label': all_labels,
-                'color': node_colors
-            },
-            'link': {
-                'source': sources,
-                'target': targets,
-                'value': values
-            }
-        }],
-        'layout': {
-            'title': 'Evidence Flow Diagram',
-            'font': {'size': 12},
-            'width': 800,
-            'height': 600
-        }
+
+    collective_data = {
+        'study_results': [],
+        'total_studies': len(docs),
+        'total_arms': 0,
+        'unique_interventions': defaultdict(int),  
+        'unique_outcomes': defaultdict(int),
+        'unique_participants': defaultdict(int)
     }
+
+    # Process each document for collective view
     
-    return jsonify(data)
+    for doc in docs:
+        print(f"Processing Document: {doc}")
+        original_doc = solr_unflatten(doc)
+        print(f"Original Document after unflattening: {original_doc}")
+
+        # Extract Level 3 Data
+        level3_data, num_arm, level3_provider = extract_level3(original_doc)
+        print(f"Extracted Level 3 Data: {level3_data}")
+        print(f"Number of Arms: {num_arm}")
+
+        # Update collective data
+        collective_data['total_arms'] += num_arm
+
+        # Process participants
+        for participant in level3_data.get('participants', []):
+            if not participant.get('negation', False):  # Exclude negated terms
+                collective_data['unique_participants'][participant['term']] += 1
+
+        # Process study design and study results for interventions and outcomes
+        for item in level3_data.get('study_results', []):
+            if item.get('type') == 'Intervention':
+                collective_data['unique_interventions'][item['term']] += 1
+            elif item.get('type') == 'Outcome':
+                collective_data['unique_outcomes'][item['term']] += 1
+
+    
+    collective_data['unique_interventions'] = list(collective_data['unique_interventions'])
+    collective_data['unique_outcomes'] = list(collective_data['unique_outcomes'])
+    collective_data['unique_participants'] = list(collective_data['unique_participants'])
+
+    print(f"Data passed to template: {collective_data}")
+
+
+    return render_template('collective_annotation.html', query=solr_query, collective_data=collective_data,
+                           Participant=Participant_list, Intervention=Intervention_list, Outcome=Outcome_list,
+                           color_pallette=PALLETE_COLORS)
+
 
 def fetch_all_documents(solr_query):
     myobj = {'somekey': 'somevalue'}
@@ -779,149 +772,6 @@ def fetch_all_documents(solr_query):
         return []
         
     return results['response']['docs']
-
-def aggregate_evidence_data(docs):
-    aggregated_data = defaultdict(lambda: defaultdict(int))
-    
-    for doc in docs:
-        level3_data, _, _ = extract_level3(solr_unflatten(doc))
-        
-        # Extract participants
-        for participant in level3_data.get('participants', []):
-            if not participant.get('negation', False):  # Only include non-negated terms
-                aggregated_data['participants'][participant['term']] += 1
-        
-        # Extract interventions from study_design and study_results
-        for item in level3_data.get('study_design', []) + level3_data.get('study_results', []):
-            if item.get('type') == 'Intervention':
-                aggregated_data['interventions'][item['term']] += 1
-                
-        # Extract outcomes from study_design and study_results
-        for item in level3_data.get('study_design', []) + level3_data.get('study_results', []):
-            if item.get('type') == 'Outcome':
-                aggregated_data['outcomes'][item['term']] += 1
-    
-    return aggregated_data
-
-from difflib import SequenceMatcher
-from nltk.corpus import wordnet
-
-def calculate_similarity(term1, term2):
-    # String similarity
-    string_similarity = SequenceMatcher(None, term1.lower(), term2.lower()).ratio()
-    
-    # WordNet similarity
-    try:
-        synsets1 = wordnet.synsets(term1)
-        synsets2 = wordnet.synsets(term2)
-        if synsets1 and synsets2:
-            wordnet_similarity = synsets1[0].path_similarity(synsets2[0]) or 0
-        else:
-            wordnet_similarity = 0
-    except:
-        wordnet_similarity = 0
-    
-    # Combined similarity score
-    return max(string_similarity, wordnet_similarity)
-
-def generate_collective_visualization(aggregated_data):
-
-    def calculate_relevance_score(term, count, query_terms):
-        # Higher score for terms that match query terms
-        query_relevance = sum(calculate_similarity(term, q_term) for q_term in query_terms)
-        # Combine with frequency count
-        return (query_relevance * 0.7) + (count * 0.3)  # Weighted combination
-    
-    # Get query terms from session
-    query = session.get('query', '').lower().split()
-    
-    # Score and sort elements by relevance
-    TOP_N = 2
-    
-    # Get most relevant items from each category
-    participants = dict(sorted(
-        aggregated_data['participants'].items(),
-        key=lambda x: calculate_relevance_score(x[0], x[1], query),
-        reverse=True
-    )[:TOP_N])
-    
-    interventions = dict(sorted(
-        aggregated_data['interventions'].items(),
-        key=lambda x: calculate_relevance_score(x[0], x[1], query),
-        reverse=True
-    )[:TOP_N])
-    
-    outcomes = dict(sorted(
-        aggregated_data['outcomes'].items(),
-        key=lambda x: calculate_relevance_score(x[0], x[1], query),
-        reverse=True
-    )[:TOP_N])
-    # Create nodes for each category
-    nodes = []
-    node_colors = []
-    
-    # Add participants (blue)
-    participant_nodes = list(participants.keys())
-    nodes.extend(participant_nodes)
-    node_colors.extend(['#1f77b4'] * len(participant_nodes))
-    
-    # Add interventions (orange)
-    intervention_nodes = list(interventions.keys())
-    nodes.extend(intervention_nodes)
-    node_colors.extend(['#ff7f0e'] * len(intervention_nodes))
-    
-    # Add outcomes (green)
-    outcome_nodes = list(outcomes.keys())
-    nodes.extend(outcome_nodes)
-    node_colors.extend(['#2ca02c'] * len(outcome_nodes))
-    
-    # Create connections
-    sources = []
-    targets = []
-    values = []
-    
-    # Connect participants to interventions
-    for p_idx, participant in enumerate(participant_nodes):
-        for i_idx, intervention in enumerate(intervention_nodes):
-            sources.append(p_idx)
-            targets.append(len(participant_nodes) + i_idx)
-            values.append(aggregated_data['participants'][participant])
-    
-    # Connect interventions to outcomes
-    for i_idx, intervention in enumerate(intervention_nodes):
-        for o_idx, outcome in enumerate(outcome_nodes):
-            sources.append(len(participant_nodes) + i_idx)
-            targets.append(len(participant_nodes) + len(intervention_nodes) + o_idx)
-            values.append(aggregated_data['interventions'][intervention])
-    
-    return {
-        'data': [{
-            'type': 'sankey',
-            'node': {
-                'pad': 30,
-                'thickness': 20,
-                'line': {'color': 'black', 'width': 0.5},
-                'label': nodes,
-                'color': node_colors
-            },
-            'link': {
-                'source': sources,
-                'target': targets,
-                'value': values
-            }
-        }],
-        'layout': {
-            'title': 'Combined Evidence Flow',
-            'font': {'size': 14},
-            'width': 1200,
-            'height': 600,
-            'margin': {'t': 40, 'b': 40, 'l': 50, 'r': 50}
-        }
-    }
-
-print("Registered Routes:")
-for rule in app.url_map.iter_rules():
-    print(f"{rule.endpoint}: {rule.rule}")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
