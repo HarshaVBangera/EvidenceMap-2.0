@@ -15,6 +15,9 @@
             background: {{ color_pallette['Outcome'] }};
         }
 	</style>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css">
+
 
 {% endblock %}
 {% block content %}
@@ -365,7 +368,37 @@
 
 		<div>
 			<div style="margin-top: 20px;display:inline-block; ">{{ num_of_results }}</div>
-			<div style="margin-top: 20px; display:inline-block; float:right; margin-right: 20px;">
+			<div style="margin-top: 20px; float:right; margin-right: 20px;">
+
+				<div class="results-summary-container" style="margin-bottom: 30px;">
+					<h4>Summary of Results</h4>
+					<div class="summary-box">
+						<p class="summary-text">
+							{% for part in results_summary.summary_parts %}
+								{{ part.text }} 
+								<a href="/visualize/{{ part.doc_id }}" class="source-link">[{{ part.index }}]</a>
+								{% if not loop.last %} {% endif %}
+							{% endfor %}
+						</p>
+					</div>
+				</div>
+
+				<div style="clear: both;"></div>
+
+				<div style="margin-top: 20px;">
+                    <button onclick="generateCollectiveMap()" class="btn btn-primary">
+                        Generate Collective Evidence Map
+                    </button>
+                    <button onclick="openFullScreen()" class="btn btn-primary" style="margin-left: 10px;">
+                        Full Screen View
+                    </button>
+                
+                    <div id="collective_visualization" style="height: 800px; width: 100%; border: 1px solid #ccc; margin: 20px 0; display: none;"></div>
+                    
+                    
+                </div>
+
+				
 
 				<form action="/sort_results" id="form-submit">
 					<label>Sorted by:&nbsp;</label>
@@ -437,6 +470,18 @@
 		</div>
 
 	</div>
+    
+    <style>
+        #collective-map-container h4 {
+            color: #347ef4;
+            margin-top: 20px;
+        }
+        #collective-map-container p {
+            margin-left: 10px;
+            font-size: 16px;
+        }
+    </style>
+
 
 	<script type="text/javascript">
 
@@ -548,5 +593,40 @@
         //# sourceURL=pen.js
 
 	</script>
+        
+    <!-- Collective Map Scripts and Styles -->
+    <div id="collective_visualization" style="height: 400px; width: 100%; border: 1px solid #ccc; margin: 20px 0; display: none;"></div>
+
+      
+    <script src="/static/js/result_page.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const collectiveData = {{ collective_data|default({})|tojson|safe }};
+                generateCollectiveMap();
+            });
+        </script>
+    <!-- Add these styles -->
+    <style>
+        .collective-map-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            background: #fff;
+            margin: 20px 0;
+            min-height: 600px;
+        }
+
+        .btn-primary {
+            background-color: #347ef4;
+            border-color: #347ef4;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2461c9;
+            border-color: #2461c9;
+        }
+    </style>
+
 
 {% endblock %}
