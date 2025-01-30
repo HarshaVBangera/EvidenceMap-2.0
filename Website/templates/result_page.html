@@ -382,21 +382,60 @@
 						</p>
 					</div>
 				</div>
-
-				<div style="clear: both;"></div>
-
-				<div style="margin-top: 20px;">
-                    <button onclick="generateCollectiveMap()" class="btn btn-primary">
-                        Generate Collective Evidence Map
-                    </button>
-                    <button onclick="openFullScreen()" class="btn btn-primary" style="margin-left: 10px;">
-                        Full Screen View
-                    </button>
                 
-                    <div id="collective_visualization" style="height: 800px; width: 100%; border: 1px solid #ccc; margin: 20px 0; display: none;"></div>
-                    
-                    
-                </div>
+                 <!-- Collective Map Scripts and Styles -->
+                <button class='btn full-size' id="myBtn_collective">Full Size</button>
+
+                    <div id="myModal_collective" class="modal">
+                        <div class="modal-content">
+                            <div style="text-align:center;">Collective Results
+                                <div class="close">&times;</div>
+                            </div>
+                            <div id="collective_visualization_popup"></div>
+                        </div>
+                    </div>
+                    <div class="collective-map-container">
+                        <div id="collective_visualization" style="height: 600px; width: 100%; border: 1px solid lightgray; margin: 20px 0;"></div>
+                    </div>
+                    <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css">
+                    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+                    <script type="text/javascript" src="{{ url_for('static', filename='study_results.js') }}"></script>
+                    <script type="text/javascript">
+                        document.addEventListener('DOMContentLoaded', function() {
+                            fetch('/visualize/collective')
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Log initial data structure
+                                    console.log("Initial data:", data);
+
+                                    const combinedData = {
+                                        study_results: data.flatMap(doc => doc.study_design)
+                                    };
+
+                                    // Log the transformed data
+                                    console.log("Combined study results:", combinedData.study_results);
+
+                                    // Log counts by type
+                                    const typeCounts = {};
+                                    combinedData.study_results.forEach(result => {
+                                        typeCounts[result.type] = (typeCounts[result.type] || 0) + 1;
+                                    });
+                                    console.log("Counts by type:", typeCounts);
+
+                                    // Log node connections
+                                    console.log("Node connections:", combinedData.study_results.map(node => ({
+                                        from: node.connects_from,
+                                        to: node.connects_to,
+                                        label: node.label,
+                                        type: node.type
+                                    })));
+
+                                    draw_study_result(combinedData, 'collective_visualization', {{ color_pallette|tojson }});
+                                });
+                        });
+                    </script>
+                
+				<div style="clear: both;"></div>
 
 				
 
@@ -594,17 +633,7 @@
 
 	</script>
         
-    <!-- Collective Map Scripts and Styles -->
-    <div id="collective_visualization" style="height: 400px; width: 100%; border: 1px solid #ccc; margin: 20px 0; display: none;"></div>
-
-      
-    <script src="/static/js/result_page.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const collectiveData = {{ collective_data|default({})|tojson|safe }};
-                generateCollectiveMap();
-            });
-        </script>
+   
     <!-- Add these styles -->
     <style>
         .collective-map-container {
