@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import pickle
+import shutil
 import time
 import urllib.parse
 import urllib.request as ur
@@ -12,6 +13,7 @@ from time import sleep
 import pytz
 import regex as re
 import requests
+import torch
 from tqdm import tqdm
 
 from EvidenceConfig import SOLR_CONFIG
@@ -20,6 +22,18 @@ DOWNLOAD_TRACKER_FILE = 'download_tracker.json'
 
 SECONDS_IN_A_DAY = 86400
 
+
+def move_to_cpu(item):
+    if isinstance(item, torch.Tensor):
+        return item.cpu()
+    elif isinstance(item, dict):
+        return {k: move_to_cpu(v) for k, v in item.items()}
+    elif isinstance(item, list):
+        return [move_to_cpu(i) for i in item]
+    elif isinstance(item, tuple):
+        return tuple(move_to_cpu(i) for i in item)
+    else:
+        return item
 
 def log_pmid_exception(pmid, e):
     file_path = os.path.join(output_dir, 'PubMed_errors.txt')
@@ -129,9 +143,13 @@ def handle_pubmed_acquisition(batch_size, **kwargs):
             else:
                 yield output, meta_out, pmids_out
 
+    if kwargs.get('pickle'):
+        pickle_pmids = True
+    else:
+        pickle_pmids = False
     if kwargs.get('pmids'):
         batches = [kwargs['pmids'][i:i + batch_size] for i in range(0, len(kwargs['pmids']), batch_size)]
-        yield from process_batches(batches, pickle_batch=False)
+        yield from process_batches(batches, pickle_batch=pickle_pmids)
     elif kwargs.get('pipeline') == 'downloader' or kwargs.get('pipeline') is None:
         batches = get_pmids(year_begin=kwargs['year_start'], year_end=kwargs['year_end'], batch_size=batch_size)
         yield from process_batches(batches, pickle_batch=True)
@@ -157,6 +175,9 @@ def handle_pubmed_acquisition(batch_size, **kwargs):
                 file_path = os.path.join(unprocessed_dir, file_name)
                 try:
                     output, meta_out, pmids = load_batch_from_file(file_path)
+                    if len(pmids) == 0:
+                        os.remove(file_path)
+                        continue
                     yield output, meta_out, pmids
 
                     new_file_path = os.path.join(processed_dir, file_name)
@@ -170,19 +191,92 @@ def handle_pubmed_acquisition(batch_size, **kwargs):
 def handle_abstract_parsing(batch, args=None):
     docs, meta_data, pmids = batch
     print(f"[Base NLP Parser]: Processing {len(docs)} documents.")
-    sent_idx, predictions_batch = Model.predictBodyOfText(docs, flatten=True, split_newlines=True,
-                                                          SentenceClassificationDriver=SentenceClassification)
+    try:
+        sent_idx, predictions_batch = Model.predictBodyOfText(docs, flatten=True, split_newlines=True,
+                                                              SentenceClassificationDriver=SentenceClassification)
+    except SequenceTooLong as e:
+        print(
+            f"[Base NLP Parser]: [ERROR]: Encountered a sentence that is too long to process.  The PMID will be logged and ignored.")
+        pmid_exception = pmids[e.error_code]
+        print(f"[Base NLP Parser]: [ERROR]: {e} from {pmid_exception}")
+        log_pmid_exception(pmid_exception, e)
+        del docs[e.error_code]
+        del meta_data[e.error_code]
+        del pmids[e.error_code]
+        return handle_abstract_parsing((docs, meta_data, pmids), args)
+    except Exception as e:
+        if hasattr(e, 'idx'):
+            p_idx = sent_idx[e.idx]
+            pmid = pmids[p_idx]
+
+            print(
+                f"[Base NLP Parser]: [ERROR]: {pmid} has caused the base NLP parser to raise an exception.  The PMID will be logged and ignored.")
+            log_pmid_exception(pmid, e)
+            del docs[p_idx]
+            del meta_data[p_idx]
+            del pmids[p_idx]
+
+            return handle_abstract_parsing((docs, meta_data, pmids), args)
+        else:
+            raise e
+
     return docs, meta_data, pmids, sent_idx, predictions_batch
 
+
+def flatten(input):
+    if not isinstance(input, list):
+        raise TypeError('Input must be a list of lists')
+
+    flattened_list = []
+    idx_map = []
+
+    for i, sublist in enumerate(input):
+        if not isinstance(sublist, list):
+            raise TypeError(f'Expected list at index {i}, got {type(sublist).__name__}')
+
+        flattened_list.extend(sublist)
+        idx_map.extend([i] * len(sublist))
+
+    return flattened_list, idx_map
+
+
+def unflatten(input, idx_map):
+    unflattened_dict = {}
+
+    for index, item in zip(idx_map, input):
+        if index not in unflattened_dict:
+            unflattened_dict[index] = []
+        unflattened_dict[index].append(item)
+
+    unflattened_list = [unflattened_dict[i] for i in sorted(unflattened_dict.keys())]
+
+    return unflattened_list
 
 def handle_negation_detection(batch, args=None):
     docs, meta_data, pmids, sent_idx, predictions_batch = batch
     print(f"[Negation Detection]: Detecting negations in {len(docs)} documents.")
-    predictions_batch = NegationDriver.detectNegations(predictions_batch)
-    tmp = [[] for _ in range(max(sent_idx) + 1)]
-    for sent_idx, predictions in zip(sent_idx, predictions_batch):
-        tmp[sent_idx].append(predictions)
-    predictions_batch = tmp
+    try:
+        predictions_batch = NegationDriver.detectNegations(predictions_batch)
+    except Exception as e:
+        if hasattr(e, 'idx'):
+            p_idx = sent_idx[e.idx]
+            pmid = pmids[p_idx]
+
+            print(
+                f"[Negation Detection]: [ERROR]: {pmid} has caused the negation detection handler to raise an exception.  The PMID will be logged and ignored.")
+            log_pmid_exception(pmid, e)
+            del docs[p_idx]
+            del meta_data[p_idx]
+            del pmids[p_idx]
+            t_batch = unflatten(predictions_batch, sent_idx)
+            del t_batch[p_idx]
+            predictions_batch, sent_idx = flatten(t_batch)
+
+            return handle_negation_detection((docs, meta_data, pmids, sent_idx, predictions_batch), args)
+        else:
+            raise e
+
+    predictions_batch = unflatten(predictions_batch, sent_idx)
     return docs, meta_data, pmids, predictions_batch
 
 
@@ -191,7 +285,19 @@ def handle_proposition_formulations(batch, args=None):
     print(f"[Proposition Formulation]: Formulating propositions for {len(docs)} documents.")
     with tqdm(total=len(predictions_batch), desc="Formulating propositions") as pbar:
         for i, predictions in enumerate(predictions_batch):
-            PropositionDriver.buildPropositions(predictions)
+            try:
+                PropositionDriver.buildPropositions(predictions)
+            except Exception as e:
+                pmid = pmids[i]
+                print(
+                    f"[Proposition Formulation]: [ERROR]: {pmid} has caused the negation detection handler to raise an exception.  The PMID will be logged and ignored.")
+                log_pmid_exception(pmid, e)
+
+                del docs[i]
+                del meta_data[i]
+                del pmids[i]
+                del predictions_batch[i]
+
             pbar.update(1)
 
     return docs, meta_data, pmids, predictions_batch
@@ -219,23 +325,30 @@ def handle_map_generation_and_upload(batch, args=None):
     solr_url = SOLR_CONFIG['base_url'] + SOLR_CONFIG['EvidenceMap_core']
     with tqdm(total=len(predictions_batch), desc="Generating Maps & Uploading") as pbar:
         for i, predictions in enumerate(predictions_batch):
-            predictions, proposed_arms = EvidenceMapDriver.fit_propositions(predictions)
-            ([participants, _, _], EvidenceMap) = EvidenceMapDriver.build_map(predictions, proposed_arms)
+            try:
+                predictions, proposed_arms = EvidenceMapDriver.fit_propositions(predictions)
+                ([participants, _, _], EvidenceMap) = EvidenceMapDriver.build_map(predictions, proposed_arms)
 
-            # Build JSON doc for SOLR
-            json_object = EvidenceMapDriver.build_json(participants, EvidenceMap, meta_data[i], predictions, pmids[i],
-                                                       docs[i])
+                # Build JSON doc for SOLR
+                json_object = EvidenceMapDriver.build_json(participants, EvidenceMap, meta_data[i], predictions,
+                                                           pmids[i],
+                                                           docs[i])
 
-            if not args.output:
-                upload_to_solr(solr_url, json_object)
-            else:
-                os.makedirs(args.output, exist_ok=True)
-                with open(os.path.join(args.output, f"{pmids[i]}.json"), 'w') as f:
-                    f.write(json.dumps(json_object))
+                if not args.output:
+                    upload_to_solr(solr_url, json_object)
+                else:
+                    os.makedirs(args.output, exist_ok=True)
+                    with open(os.path.join(args.output, f"{pmids[i]}.json"), 'w') as f:
+                        f.write(json.dumps(json_object))
+            except Exception as e:
+                pmid = pmids[i]
+                print(
+                    f"[EvidenceMap]: [ERROR]: {pmid} has caused the evidence map handler to raise an exception.  The PMID will be logged and ignored.")
+                log_pmid_exception(pmid, e)
             pbar.update(1)
 
-    print("[EvidenceMap]: Committing changes to SOLR.")
     if not args.output:
+        print("[EvidenceMap]: Committing changes to SOLR.")
         commit_response = requests.get(f'{solr_url}/update?commit=true')
         if commit_response.status_code != 200:
             print(
@@ -547,6 +660,29 @@ def get_abstract_bypmid(pmid):
     return title_text, abstract_text, meta_data
 
 
+def get_excepted_pmids():
+    file_path = os.path.join(output_dir, 'PubMed_errors.txt')
+    backup_file_path = file_path + '.old'
+
+    pmids = []
+    errors = []
+
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                parts = line.strip().split(', Error: ')
+                if len(parts) == 2:
+                    pmid = parts[0].replace('PMID: ', '')
+                    error = parts[1]
+                    pmids.append(pmid)
+                    errors.append(error)
+
+        shutil.move(file_path, backup_file_path)
+    except:
+        return [], []
+
+    return pmids, errors
+
 pipeline_stages = [
     handle_abstract_parsing,
     handle_negation_detection,
@@ -566,6 +702,10 @@ if __name__ == "__main__":
                         help='Temporary directory for storing/processing batches.')
     parser.add_argument('-P', '--pipeline', type=str, default=None,
                         help='Run the script in pipeline mode. Possible values: downloader, nlp')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Reads in a debug.pkl file generated if the pipeline terminated abnormally, and resumes the pipeline for easy debugging.')
+    parser.add_argument('-e', '--reacquire-exceptions', action='store_true',
+                        help='Reacquires articles that failed to download due to exceptions encountered.  This overrides the years and pmids option.')
 
     args = parser.parse_args()
     if args.batchsize > 9500:
@@ -576,40 +716,88 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    if args.years:
-        year_begin, year_end = args.years
-        if args.pipeline is None or args.pipeline == 'downloader':
-            print(f"Fetching articles from {year_begin} to {year_end}.")
-        else:
-            print(f"Running NLP pipeline on unprocessed articles.  This is a continuous operation.")
-        batch_iterator = handle_pubmed_acquisition(year_start=year_begin, year_end=year_end, batch_size=args.batchsize,
-                                                   pipeline=args.pipeline)
-    if args.pmids:
-        print(f"Fetching {len(args.pmids)} specified articles.")
-        batch_iterator = handle_pubmed_acquisition(pmids=args.pmids, batch_size=args.batchsize, pipeline=args.pipeline)
-
-    if args.pmids or args.pipeline == 'nlp' or args.pipeline is None:
-        from Website.pipeline import SentenceClassification, Model, NegationDriver, PropositionDriver, EvidenceMapDriver
-
-        batch_counter = 0
-        for batch in batch_iterator:
-            if len(batch) > 3 and batch[3] is not None:
-                file_path = batch[3]
-                batch = batch[:3]
+    if not args.debug:
+        if args.reacquire_exceptions:
+            args.pmids = False
+            file_path = os.path.join(output_dir, 'PubMed_errors.txt')
+            pmids, errors = get_excepted_pmids()
+            if not pmids:
+                print("Nothing to acquire")
+                exit(0)
+            print(f"Attempting to acquire {len(pmids)} articles that failed to acquire.")
+            batch_iterator = handle_pubmed_acquisition(pmids=pmids, batch_size=args.batchsize,
+                                                       pipeline=args.pipeline, pickle=True)
+        elif args.years:
+            args.pmids = False
+            year_begin, year_end = args.years
+            if args.pipeline is None or args.pipeline == 'downloader':
+                print(f"Fetching articles from {year_begin} to {year_end}.")
             else:
-                file_path = None
+                print(f"Running NLP pipeline on unprocessed articles.  This is a continuous operation.")
+            batch_iterator = handle_pubmed_acquisition(year_start=year_begin, year_end=year_end,
+                                                       batch_size=args.batchsize,
+                                                       pipeline=args.pipeline, pickle=True)
+        elif args.pmids:
+            if not args.pmids:
+                print("Nothing to acquire")
+                exit(0)
+            print(f"Fetching {len(args.pmids)} specified articles.")
+            batch_iterator = handle_pubmed_acquisition(pmids=args.pmids, batch_size=args.batchsize,
+                                                       pipeline=args.pipeline, pickle=False)
 
-            if not batch:
-                continue
-            batch_counter += 1
-            print(f"Batch {batch_counter}: ")
-            for stage in pipeline_stages:
-                batch = stage(batch, args)
-            if file_path is not None:
-                processed_file_path = file_path.replace('raw_pubmed_unprocessed', 'raw_pubmed_processed')
-                os.makedirs(os.path.dirname(processed_file_path), exist_ok=True)
-                os.rename(file_path, processed_file_path)
+        if args.pmids or args.pipeline == 'nlp' or args.pipeline is None:
+            from Website.pipeline import SentenceClassification, Model, NegationDriver, PropositionDriver, \
+                EvidenceMapDriver
+            from Website.exceptions import SequenceTooLong
 
+            batch_counter = 0
+            for batch in batch_iterator:
+                if len(batch) > 3 and batch[3] is not None:
+                    file_path = batch[3]
+                    batch = batch[:3]
+                else:
+                    file_path = None
+
+                if not batch:
+                    continue
+                batch_counter += 1
+                print(f"Batch {batch_counter}: ")
+                for i, stage in enumerate(pipeline_stages):
+                    try:
+                        batch = stage(batch, args)
+                    except Exception as e:
+                        print(
+                            f"[FATAL ERROR]: An uncaught exception was encountered in the pipeline.  Pickling pipeline batch into debug.pkl...")
+                        cpu_batch = move_to_cpu(batch)
+                        torch.cuda.empty_cache()
+
+                        os.makedirs(output_dir, exist_ok=True)
+                        debug_file_path = os.path.join(output_dir, 'debug.pkl')
+                        with open(debug_file_path, 'wb') as debug_file:
+                            pickle.dump((i, cpu_batch, args), debug_file)
+                        print(
+                            f"[FATAL ERROR]: Pipeline data has been pickled.  Use -d to open the pickle for debugging.")
+                        print(f"[FATAL ERROR]: Pipeline will now terminate.")
+                        raise e
+
+                if file_path is not None:
+                    processed_file_path = file_path.replace('raw_pubmed_unprocessed', 'raw_pubmed_processed')
+                    os.makedirs(os.path.dirname(processed_file_path), exist_ok=True)
+                    os.rename(file_path, processed_file_path)
+
+        else:
+            for _ in batch_iterator:
+                pass
     else:
-        for _ in batch_iterator:
-            pass
+        from Website.pipeline import SentenceClassification, Model, NegationDriver, PropositionDriver, \
+            EvidenceMapDriver, SequenceTooLong
+
+        debug_file_path = os.path.join(output_dir, 'debug.pkl')
+        with open(debug_file_path, 'rb') as debug_file:
+            j, batch, t_args = pickle.load(debug_file)
+        try:
+            for i in range(j, len(pipeline_stages)):
+                batch = pipeline_stages[i](batch, t_args)
+        finally:
+            if os.path.isfile(debug_file_path):
+                os.remove(debug_file_path)
