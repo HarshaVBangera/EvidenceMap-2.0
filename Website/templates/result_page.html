@@ -139,230 +139,218 @@
 			<div class=Outcome style="float:left; margin-top:5px; height:18px; width:22px; "></div>
 			<div style="float:left; text-align:left; ">&nbsp;Outcome&nbsp;</div>
 		</div>
+        
+        <!-- Collective Map Scripts and Styles -->
 
-		<div style=' margin: 0 auto; text-align:left; margin:10px'>
-			{% if Participant|length>0 or Intervention|length>0 or Outcome|length>0 %}
-				<div lable='query elements' class="feature-border">
-					<div style="margin-top:10px;margin-bottom:10px;float:left;font-size: 18px;width:100%; text-align: center;">
-						<b>Query </b> &nbsp
-						<div class="far fa-question-circle question" data-toggle="tooltip" data-placement="right"
-						     data-html="true"
-						     title="Break down your need for evidence into searchable keywords according to PIO framework"
-						     style=''></div>
-					</div>
-					<br>
-					<br>
+        <div class="collective-map-container">
+            <div class="collective-spinner dimmer" style="display: none;">
+                <div class="loader">
+                    <div class="lds-facebook" style="height: 60px;">
+                        <div style="background:#00BFFF;opacity: 1;"></div>
+                        <div style="background:#00BFFF;opacity: 1;"></div>
+                        <div style="background:#00BFFF;opacity: 1;"></div>
+                    </div>
+                    <div style="text-align:center;width: 100%;margin-top: 0px;color: #F0FFFF;">
+                        <b>Updating Visualization...</b>
+                    </div>
+                </div>
+            </div>
+            <div id="level3-addition"></div>
+                <h4 style="text-align: center;">Enrollment</h4>
+                <div id="collective_enroll" style="height: 300px; width: 100%; border: 1px solid lightgray; margin: 20px 0;"></div>
+                <div id="myModal_collective_en" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3 style="text-align: center;">Enrollment</h3>
+                        <div id="collective_enroll_popup" style="height: 80vh; width: 100%;"></div>
+                    </div>
+                </div>
+                <button class="btn full-size" id="myBtn_collective_en">Full Size</button>
+                <h4 style="text-align: center; margin-top: 20px;">Study Results</h4>
+                <div id="collective_visualization" style="height: 300px; width: 100%; border: 1px solid lightgray; margin: 20px 0;"></div>
+                <div id="myModal_collective" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3 style="text-align: center;">Study Results</h3>
+                        <div id="collective_visualization_popup" style="height: 80vh; width: 100%;"></div>
+                    </div>
+                </div>
+                <button class="btn full-size" id="myBtn_collective">Full Size</button>
 
-					{% if Participant|length>0 %}
-						<div style="margin-left:45px">Participant:</div>
+                <h4 style="text-align: center; margin-top: 20px;">Study Design</h4>
+                <div id="collective_visualization_des" style="height: 300px; width: 100%; border: 1px solid lightgray; margin: 20px 0;"></div>
+                <div id="myModal_collective_des" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3 style="text-align: center;">Study Design</h3>
+                        <div id="collective_visualization_popup_des" style="height: 80vh; width: 100%;"></div>
+                    </div>
+                </div>
+                <button class="btn full-size" id="myBtn_collective_des">Full Size</button>
+                
+                
+        </div>
 
-						{% for i in range(0, Participant|length,2) %}
-							<div class=left_relation> {{ Participant[i] }} &nbsp;</div>
-							<div class="left_entity Participant"> {{ Participant[i+1] }}</div>
-							<br>
-						{% endfor %}
-					{% endif %}
+        <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css">
 
-					{% if Intervention|length>0 %}
+        <!-- Load study_results.js -->
+        <script type="text/javascript" src="{{ url_for('static', filename='study_results.js') }}"></script>
 
-						<div style=' margin-top:15px; margin-left:45px'>Intervention:</div>
-						{% for i in range(0, Intervention|length,2) %}
-							<div class=left_relation> {{ Intervention[i] }} &nbsp;</div>
-							<div class="left_entity Intervention"> {{ Intervention[i+1] }}</div>
-							<br>
-						{% endfor %}
-					{% endif %}
+        <!-- Load study_design.js and capture its draw_design function -->
+        <script type="text/javascript" src="{{ url_for('static', filename='study_design.js') }}"></script>
+        <script type="text/javascript">
+            // Save the draw_design function from study_design.js into a separate variable.
+            var studyDesignDrawDesign = draw_design;
+        </script>
 
-					{% if Outcome|length>0 %}
-						<div style=' margin-top:15px;margin-left:45px'>Outcome:</div>
-						{% for i in range(0, Outcome|length,2) %}
-							<div class=left_relation> {{ Outcome[i] }} &nbsp;</div>
-							<div class="left_entity Outcome"> {{ Outcome[i+1] }}</div>
-							<br>
-						{% endfor %}
+        <!-- Load participant.js and capture its draw_design function -->
+        <script type="text/javascript" src="{{ url_for('static', filename='participant.js') }}"></script>
+        <script type="text/javascript">
+            // Save the draw_design function from participant.js into another variable.
+            var participantDrawDesign = draw_design;
+        </script>
 
-					{% endif %}
-					{% if Participant|length>0 or Intervention|length>0 or Outcome|length>0 %}
-						<form action="/advanced_search_page">
-						<div style='margin-bottom:10px;margin-top: 20px;text-align:center; '><input type='submit'
-						                                                                            value="Modify"
-						                                                                            class='btn'
-						                                                                            style="background:#738391; color:white">
-						</div>
-					{% endif %}
-					</form>
-				</div>
-			{% endif %}
+        <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
-			{% if facet_Participant|length>0 or facet_Intervention|length>0 or facet_Outcome|length>0 %}
-				<div lable='facet elements' class="feature-border">
-					<div style="margin-top:20px;margin-bottom:10px;float:left;font-size: 18px;width:100%;text-align: center;">
-						<b>Filter </b>
-						<div class="far fa-question-circle question" data-toggle="tooltip" data-placement="right"
-						     data-html="true"
-						     title="<p>Here we display all PIO elements mentioned in the retrieved articles with their frequency. </p> Select/unselect to further refine your query"></div>
-					</div>
+        <script type="text/javascript">
+            let currentenrollData;
+            let currentVisualizationData;
+            let currentDesignData;
+            document.addEventListener('DOMContentLoaded', function() {
+                fetch('/visualize/collective')
+                    .then(response => response.json())
+                    .then(response => {
+                        console.log("Initial API response:", response);
+                        currentVisualizationData = {  
+                            study_results: response.data.flatMap(doc => doc.study_results)
+                        };
+                        currentDesignData = {
+                            study_design: response.data.flatMap(doc => doc.study_design)
+                        };
+                        currentenrollData = {
+                            participants: response.data.flatMap(doc => doc.participants)
+                        };
+                        console.log("Processed currentenrollData:", currentenrollData);
+                        const level3Addition = document.getElementById('level3-addition');
+                        if (level3Addition && response.providers) {
+                            const temp = document.createElement('div');
+                            temp.innerHTML = response.providers.added_elements.level3;
+                            const scripts = temp.getElementsByTagName('script');
+                            const scriptContent = scripts[0].textContent;
+                            scripts[0].remove();
+                            level3Addition.innerHTML = temp.innerHTML;
+                            const newScript = document.createElement('script');
+                            newScript.textContent = scriptContent;
+                            document.body.appendChild(newScript);
+                            const enrollmentForm = document.getElementById('enrollment_form');
+                            if (enrollmentForm) {
+                                const resetButton = enrollmentForm.querySelector('button[type="button"]');
+                                if (resetButton) {
+                                    resetButton.addEventListener('click', function() {
+                                        const enrollmentForm = document.getElementById('enrollment_form');
+                                        if (enrollmentForm) {
+                                            enrollmentForm.reset();
+                                            const formData = new FormData(enrollmentForm);
+                                            const params = new URLSearchParams(formData);
+                                            params.append('action', 'reparse');
 
-					<br>
-					<form action="/filter_results">
-						{% if facet_Participant|length>0 %}
-							<div style="margin-top:30px;margin-left:45px">Participant:
-								<div class="far fa-question-circle question" data-toggle="tooltip"
-								     data-placement="right" data-html="true"
-								     title="The most critical characteristics of the enrolled population"></div>
-							</div>
-							{% if facet_Participant|length<6 %}
+                                            fetch('/visualize/collective?' + params.toString())
+                                                .then(response => response.json())
+                                                .then(async response => {
+                                                    currentVisualizationData = {
+                                                        study_results: response.data.flatMap(doc => doc.study_results)
+                                                    };
+                                                    currentDesignData = {
+                                                        study_design: response.data.flatMap(doc => doc.study_design)
+                                                    };
+                                                    currentenrollData = {
+                                                        participants: response.data.flatMap(doc => doc.participants)
+                                                    };
+                                                    await draw_study_result(currentVisualizationData, 'collective_visualization', {{ color_pallette|tojson }});
+                                                    await draw_study_result(currentVisualizationData, 'collective_visualization_popup', {{ color_pallette|tojson }});
 
-								{% for i in range(0, facet_Participant|length,2) %}
-									<input type="checkbox" id="facet_term" name="checked_facet_Participant" checked
-									       class='left_check' value='{{ facet_Participant[i] }}'>
-									<div class="left_facets Participant"> {{ facet_Participant[i] }} &nbsp;</div>
-									<div class=left_elements> {{ facet_Participant[i+1] }}</div>
+                                                    await studyDesignDrawDesign(currentDesignData, 'collective_visualization_des', {{ color_pallette|tojson }});
+                                                    await studyDesignDrawDesign(currentDesignData, 'collective_visualization_popup_des', {{ color_pallette|tojson }});
 
-									<br>
-								{% endfor %}
-							{% endif %}
+                                                    await participantDrawDesign(currentenrollData, 'collective_enroll', {{ color_pallette|tojson }});
+                                                    await participantDrawDesign(currentenrollData, 'collective_enroll_popup', {{ color_pallette|tojson }});
+                                                });
+                                        }
+                                    });
+                                }
+                                enrollmentForm.addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    document.querySelector('.collective-spinner').style.display = "block";
+                                    const formData = new FormData(this);
+                                    const params = new URLSearchParams();
+                                    for (const [key, value] of formData.entries()) {
+                                        params.append(key, value);
+                                    }
+                                    fetch('/visualize/collective?' + params.toString())
+                                        .then(response => response.json())
+                                        .then(async response => {
+                                            console.log("Updated data received:", response);
+                                            currentVisualizationData = {
+                                                study_results: response.data.flatMap(doc => doc.study_results)
+                                            };
+                                            currentDesignData = {
+                                                study_design: response.data.flatMap(doc => doc.study_design)
+                                            };
+                                            currentenrollData = {
+                                                participants: response.data.flatMap(doc => doc.participants)
+                                            };
 
-							{% if facet_Participant|length>=6 %}
-								{% for i in range(0, 6,2) %}
-									<input type="checkbox" id="facet_term" name="checked_facet_Participant" checked
-									       class='left_check' value='{{ facet_Participant[i] }}'>
-									<div class="left_facets Participant"> {{ facet_Participant[i] }} &nbsp;</div>
-									<div class=left_elements> {{ facet_Participant[i+1] }}</div>
+                                            console.log("Processed data for visualization:", currentVisualizationData);
+                                            await draw_study_result(currentVisualizationData, 'collective_visualization', {{ color_pallette|tojson }});
+                                            await draw_study_result(currentVisualizationData, 'collective_visualization_popup', {{ color_pallette|tojson }});
+                                            console.log("Visualization update completed");
+                                            await studyDesignDrawDesign(currentDesignData, 'collective_visualization_des', {{ color_pallette|tojson }});
+                                            await studyDesignDrawDesign(currentDesignData, 'collective_visualization_popup_des', {{ color_pallette|tojson }});
+                                            await participantDrawDesign(currentenrollData, 'collective_enroll', {{ color_pallette|tojson }});
+                                            await participantDrawDesign(currentenrollData, 'collective_enroll_popup', {{ color_pallette|tojson }});
+                                        })
+                                        .catch(error => {
+                                            console.log("error updating visualisation", error);
+                                        })
+                                        .finally(() => {
+                                            document.querySelector('.collective-spinner').style.display = "none";
+                                        });
+                                });
+                            }
+                        }
+                        // Use the captured functions for the initial render:
+                        draw_study_result(currentVisualizationData, 'collective_visualization', {{ color_pallette|tojson }});
+                        studyDesignDrawDesign(currentDesignData, 'collective_visualization_des', {{ color_pallette|tojson }});
+                        participantDrawDesign(currentenrollData, 'collective_enroll', {{ color_pallette|tojson }});
+                        document.getElementById("myBtn_collective").onclick = function() {
+                            document.getElementById("myModal_collective").style.display = "flex";
+                            draw_study_result(currentVisualizationData, 'collective_visualization_popup', {{ color_pallette|tojson }});
+                        };
+                        document.getElementById("myBtn_collective_des").onclick = function() {
+                            document.getElementById("myModal_collective_des").style.display = "flex";
+                            studyDesignDrawDesign(currentDesignData, 'collective_visualization_popup_des', {{ color_pallette|tojson }});
+                        };
 
-									<br>
-								{% endfor %}
+                        document.getElementById("myBtn_collective_en").onclick = function() {
+                            document.getElementById("myModal_collective_en").style.display = "flex";
+                            participantDrawDesign(currentenrollData, 'collective_enroll_popup', {{ color_pallette|tojson }});
+                        };
 
+                        document.querySelector("#myModal_collective .close").onclick = function() {
+                            document.getElementById("myModal_collective").style.display = "none";
+                        };
+                        document.querySelector("#myModal_collective_des .close").onclick = function() {
+                            document.getElementById("myModal_collective_des").style.display = "none";
+                        };
+                        document.querySelector("#myModal_collective_en .close").onclick = function() {
+                            document.getElementById("myModal_collective_en").style.display = "none";
+                        };
+                    });
+            });
+        </script>
 
-								<div id="accordion">
-									<div id="collapseOne" class="collapse hide" aria-labelledby="headingOne"
-									     data-parent="#accordion">
+    </div>
 
-										{% for i in range(6, facet_Participant|length,2) %}
-											<input type="checkbox" id="facet_term" name="checked_facet_Participant"
-											       checked class='left_check' value='{{ facet_Participant[i] }}'>
-											<div class="left_facets Participant"> {{ facet_Participant[i] }} &nbsp;
-											</div>
-											<div class=left_elements> {{ facet_Participant[i+1] }}</div>
-
-											<br>
-										{% endfor %}
-
-									</div>
-
-									<div id='hide_show' class="collapseHeader ui fluid more" data-toggle="collapse"
-									     data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-										More
-									</div>
-
-								</div>
-							{% endif %}
-
-						{% endif %}
-
-						{% if facet_Intervention|length>0 %}
-							<div style=' margin-top:15px; margin-left:45px'>Intervention:
-								<div class="far fa-question-circle question" data-toggle="tooltip"
-								     data-placement="right" data-html="true"
-								     title="The primary intervention considered, and the intervention compared"></div>
-							</div>
-							{% if facet_Intervention|length<6 %}
-								{% for i in range(0, facet_Intervention|length,2) %}
-									<input type="checkbox" id="facet_term" name="checked_facet_Intervention" checked
-									       class='left_check' value='{{ facet_Intervention[i] }}'>
-									<div class="left_facets Intervention"> {{ facet_Intervention[i] }} &nbsp;</div>
-									<div class=left_elements> {{ facet_Intervention[i+1] }}</div>
-									<br>
-								{% endfor %}
-							{% endif %}
-							{% if facet_Intervention|length>=6 %}
-								{% for i in range(0, 6,2) %}
-									<input type="checkbox" id="facet_term" name="checked_facet_Intervention" checked
-									       class='left_check' value='{{ facet_Intervention[i] }}'>
-									<div class="left_facets Intervention"> {{ facet_Intervention[i] }} &nbsp;</div>
-									<div class=left_elements> {{ facet_Intervention[i+1] }}</div>
-									<br>
-								{% endfor %}
-							{% endif %}
-							<div id="accordion_Intervention">
-								<div id="collapseOne_Intervention" class="collapse hide" aria-labelledby="headingOne"
-								     data-parent="#accordion_Intervention">
-									{% for i in range(6, facet_Intervention|length,2) %}
-										<input type="checkbox" id="facet_term" name="checked_facet_Intervention" checked
-										       class='left_check' value='{{ facet_Intervention[i] }}'>
-										<div class="left_facets Intervention"> {{ facet_Intervention[i] }} &nbsp;</div>
-										<div class=left_elements> {{ facet_Intervention[i+1] }}</div>
-										<br>
-									{% endfor %}
-								</div>
-
-								<div id='hide_show_Intervention' class="collapseHeader ui fluid more"
-								     data-toggle="collapse" data-target="#collapseOne_Intervention" aria-expanded="true"
-								     aria-controls="collapseOne_Intervention">More
-								</div>
-
-							</div>
-						{% endif %}
-
-						{% if facet_Outcome|length>0 %}
-							<div style=' margin-top:15px;margin-left:45px'>Outcome:
-								<div class="far fa-question-circle question" data-toggle="tooltip"
-								     data-placement="right" data-html="true"
-								     title="The anticipated measures, improvements, or effects"></div>
-							</div>
-							{% if facet_Outcome|length<6 %}
-								{% for i in range(0, facet_Outcome|length,2) %}
-									<input type="checkbox" id="facet_term" name="checked_facet_Outcome" checked
-									       class='left_check' value='{{ facet_Outcome[i] }}'>
-									<div class="left_facets Outcome"> {{ facet_Outcome[i] }} &nbsp;</div>
-									<div class=left_elements> {{ facet_Outcome[i+1] }}</div>
-									<br>
-								{% endfor %}
-							{% endif %}
-						{% endif %}
-						{% if facet_Outcome|length>=6 %}
-							{% for i in range(0, 6,2) %}
-								<input type="checkbox" id="facet_term" name="checked_facet_Outcome" checked
-								       class='left_check' value='{{ facet_Outcome[i] }}'>
-								<div class="left_facets Outcome"> {{ facet_Outcome[i] }} &nbsp;</div>
-								<div class=left_elements> {{ facet_Outcome[i+1] }}</div>
-								<br>
-							{% endfor %}
-
-							<div id="accordion_Outcome">
-								<div id="collapseOne_Outcome" class="collapse hide" aria-labelledby="headingOne"
-								     data-parent="#accordion_Outcome">
-									{% for i in range(6, facet_Outcome|length,2) %}
-										<input type="checkbox" id="facet_term" name="checked_facet_Outcome" checked
-										       class='left_check' value='{{ facet_Outcome[i] }}'>
-										<div class="left_facets Outcome"> {{ facet_Outcome[i] }} &nbsp;</div>
-										<div class=left_elements> {{ facet_Outcome[i+1] }}</div>
-										<br>
-
-									{% endfor %}
-								</div>
-
-								<div id='hide_show_Outcome' class="collapseHeader ui fluid more" data-toggle="collapse"
-								     data-target="#collapseOne_Outcome" aria-expanded="true"
-								     aria-controls="collapseOne_Outcome">More
-								</div>
-
-							</div>
-						{% endif %}
-
-						{% if facet_Participant|length>0 or facet_Intervention|length>0 or facet_Outcome|length>0 %}
-							<div style='margin: 0 auto;text-align:center;margin-top: 25px;margin-bottom: 10px; '><input
-									type='submit' value=" Filter Results" class='btn  '
-									style="background:#738391;  color:white"> <a class="uncheckall" href="#"> Uncheck
-								All</a></div>
-						{% endif %}
-					</form>
-				</div>
-			{% endif %}
-
-		</div>
-
-	</div>
 
 	<div style=' margin: 0 auto; width: 55%; display: inline-block;text-align: left; '>
 
@@ -382,21 +370,9 @@
 						</p>
 					</div>
 				</div>
-
-				<div style="clear: both;"></div>
-
-				<div style="margin-top: 20px;">
-                    <button onclick="generateCollectiveMap()" class="btn btn-primary">
-                        Generate Collective Evidence Map
-                    </button>
-                    <button onclick="openFullScreen()" class="btn btn-primary" style="margin-left: 10px;">
-                        Full Screen View
-                    </button>
                 
-                    <div id="collective_visualization" style="height: 800px; width: 100%; border: 1px solid #ccc; margin: 20px 0; display: none;"></div>
-                    
-                    
-                </div>
+                 
+				<div style="clear: both;"></div>
 
 				
 
@@ -479,6 +455,12 @@
         #collective-map-container p {
             margin-left: 10px;
             font-size: 16px;
+        }
+        #level3-addition {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background: #fff;
         }
     </style>
 
@@ -594,17 +576,7 @@
 
 	</script>
         
-    <!-- Collective Map Scripts and Styles -->
-    <div id="collective_visualization" style="height: 400px; width: 100%; border: 1px solid #ccc; margin: 20px 0; display: none;"></div>
-
-      
-    <script src="/static/js/result_page.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const collectiveData = {{ collective_data|default({})|tojson|safe }};
-                generateCollectiveMap();
-            });
-        </script>
+   
     <!-- Add these styles -->
     <style>
         .collective-map-container {
@@ -626,6 +598,60 @@
             background-color: #2461c9;
             border-color: #2461c9;
         }
+        .collective_visualization_popup {
+            height: 80vh;
+            width: 100%;
+        }
+        /* Modal Styling */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            width: 90%;
+            max-width: 1200px;
+            height: 90vh;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        /* Close Button */
+        .modal .close {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .full-size {
+            display: inline-block;
+            background: lightgray;
+            padding: 3px;
+            color: black;
+            margin-top: 5px;
+        }
+
+        /* Ensures Full-Size Visualization */
+        #collective_visualization_popup {
+            width: 100%;
+            height: 85vh;
+            border: 1px solid lightgray;
+        }
+
     </style>
 
 
