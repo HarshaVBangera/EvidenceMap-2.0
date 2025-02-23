@@ -2,6 +2,8 @@ var nodes_des = null;
 var edges_des = null;
 var network_des = null;
 var network_des_popup = null;
+var network_col_des = null;
+var network_col_popup_des = null;
 
 function edgeExists(edges, from, to) {
     return edges.some(edge => edge.from === from && edge.to === to);
@@ -44,9 +46,21 @@ function draw_design(js_design_data, div_id, colors) {
     };
 
     // draw network
+    let usedIds_des = new Set();
+    let idMapping_des = {};
     for (let i = 0; i < js_design_data['study_design'].length; i++) {
         let node = js_design_data['study_design'][i];
-        let node_id = node['label'];
+        let node_id;
+        if (div_id == "collective_visualization_des"){
+            node_id = `global_${node['label']}`;
+            idMapping_des[node['label']] = node_id;
+        } else {
+            node_id = node['label']
+        }
+        if (usedIds_des.has(node_id)) {
+            continue;
+        }
+        usedIds_des.add(node_id);
         let node_type = node['type'];
         let node_label = node['term'];
 
@@ -70,12 +84,20 @@ function draw_design(js_design_data, div_id, colors) {
             if (from_id === "Root") {
                 continue;
             }
+            if (div_id === "collective_visualization_des" && from_id in idMapping_des) {
+                // Update the from_id to match the new node ID format
+                from_id = idMapping_des[from_id];
+            }
             if (!edgeExists(edges_des, from_id, node_id)) {
                 edges_des.push({from: from_id, to: node_id, color: 'gray'});
             }
         }
         for (let j = 0; j < node['connects_to'].length; j++) {
             let to_id = node['connects_to'][j];
+            if (div_id === "collective_visualization_des" && to_id in idMapping_des) {
+                // Update the to_id to match the new node ID format
+                to_id = idMapping_des[to_id];
+            }
             if (!edgeExists(edges_des, node_id, to_id)) {
                 edges_des.push({from: node_id, to: to_id, color: 'gray'});
             }
@@ -131,6 +153,22 @@ function draw_design(js_design_data, div_id, colors) {
         } else {
             options.nodes.font.size = 14;
             network_des_popup = new vis.Network(container_des_popup, data_des, options);
+        }
+    } else if (div_id === "collective_visualization_des") {
+        var container = document.getElementById("collective_visualization_des");
+        if (js_design_data['study_design'].length === 0) {
+            container.innerHTML = "<p style='display: flex; justify-content: center; align-items: center; height: 100%;'>No study design found</p>";
+        } else {
+            options.nodes.font.size = 14;
+            network_col_des = new vis.Network(container, data_des, options);
+        }
+    } else if ( div_id == "collective_visualization_popup_des"){
+        var container = document.getElementById("collective_visualization_popup_des");
+        if (js_design_data['study_design'].length == 0) {
+            container.innerHTML = "<p style='display: flex; justify-content: center; align-items: center; height: 100%;'>No study design found</p>";
+        } else {
+            options.nodes.font.size = 14;
+            network_col_popup_des = new vis.Network(container, data_des, options);
         }
     }
 }
