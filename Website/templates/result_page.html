@@ -155,6 +155,11 @@
                     </div>
                 </div>
             </div>
+            <div style="text-align: right; margin-right:45px; margin-bottom: 10px;">
+                <a href="{{ url_for('download_collective') }}">
+                    <i class="download icon">&nbsp;JSON</i>
+                </a>
+            </div>
             <div id="level3-addition"></div>
                 <h4 style="text-align: center;">Enrollment</h4>
                 <div id="collective_enroll" style="height: 300px; width: 100%; border: 1px solid lightgray; margin: 20px 0;"></div>
@@ -217,7 +222,12 @@
             let currentVisualizationData;
             let currentDesignData;
             document.addEventListener('DOMContentLoaded', function() {
-                fetch('/visualize/collective')
+                fetch('/visualize/collective', {
+                    headers: {
+                        'Cache-contol' : 'no-cache',
+                        'Pragma' : 'no-cache'
+                        }
+                    })
                     .then(response => response.json())
                     .then(response => {
                         console.log("Initial API response:", response);
@@ -242,6 +252,7 @@
                             const newScript = document.createElement('script');
                             newScript.textContent = scriptContent;
                             document.body.appendChild(newScript);
+                            
                             const enrollmentForm = document.getElementById('enrollment_form');
                             if (enrollmentForm) {
                                 const resetButton = enrollmentForm.querySelector('button[type="button"]');
@@ -280,7 +291,8 @@
                                 }
                                 enrollmentForm.addEventListener('submit', function(e) {
                                     e.preventDefault();
-                                    document.querySelector('.collective-spinner').style.display = "block";
+                                    const spinner = document.querySelector('.collective-spinner');
+                                    spinner.style.display = "block";
                                     const formData = new FormData(this);
                                     const params = new URLSearchParams();
                                     for (const [key, value] of formData.entries()) {
@@ -313,7 +325,7 @@
                                             console.log("error updating visualisation", error);
                                         })
                                         .finally(() => {
-                                            document.querySelector('.collective-spinner').style.display = "none";
+                                            spinner.style.display = "none";
                                         });
                                 });
                             }
@@ -359,18 +371,147 @@
 			<div style="margin-top: 20px; float:right; margin-right: 20px;">
 
 				<div class="results-summary-container" style="margin-bottom: 30px;">
-					<h4>Summary of Results</h4>
-					<div class="summary-box">
-						<p class="summary-text">
-							{% for part in results_summary.summary_parts %}
-								{{ part.text }} 
-								<a href="/visualize/{{ part.doc_id }}" class="source-link">[{{ part.index }}]</a>
-								{% if not loop.last %} {% endif %}
-							{% endfor %}
-						</p>
-					</div>
-				</div>
-                
+                    <div class="tabs-container">
+                        <!-- Tab navigation -->
+                        <div class="tab-navigation">
+                            <button class="tab-button active" onclick="openTab(event, 'extractedSummary')">Extracted Summary</button>
+                            <button class="tab-button" onclick="openTab(event, 'modelSummary')">Generative Summary</button>
+                            <button class="tab-button" onclick="openTab(event, 'final-summary')">Synthesized Overview</button>
+                        </div>
+
+                        <!-- Tab content for extracted summary -->
+                        <div id="extractedSummary" class="tab-content active">
+                            <h3>Extracted Summaries</h3>
+                            {% if summaries %}
+                                {% for summary in summaries %}
+                                    <div class="summary-item">
+                                        {{ summary.text | safe }}
+                                        <a href="/visualize/{{ summary.doc_id }}" class="source-link">[{{ summary.index }}]</a>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p>No extracted summaries available.</p>
+                            {% endif %}
+                        </div>
+                        
+
+                        <!-- Tab content for model summary -->
+                        <div id="modelSummary" class="tab-content">
+                            <h3>Generative Summaries</h3>
+                            {% if model_summaries %}
+                                {% for summary in model_summaries %}
+                                    <div class="summary-item">
+                                        {{ summary.text | safe }}
+                                        <a href="/visualize/{{ summary.doc_id }}" class="source-link">[{{ summary.index }}]</a>
+                                        <span class="relevance-score">Relevance: {{ summary.relevance_score }}%</span>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p>No model summaries available.</p>
+                            {% endif %}
+                        </div>
+                        
+                         <!-- Tab content for NLP evidence summary -->
+                        <div id="final-summary" class="tab-content active">
+                            <h3>Synthesized Overview</h3>
+                            {% if final_summaries %}
+                                {% for summary in final_summaries %}
+                                    <div class="summary-item">
+                                        {{ summary.final_summary | safe }}
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p>No final summary available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <script>
+                function openTab(evt, tabName) {
+                    // Hide all tab content
+                    var tabContent = document.getElementsByClassName("tab-content");
+                    for (var i = 0; i < tabContent.length; i++) {
+                        tabContent[i].classList.remove("active");
+                    }
+
+                    // Remove active class from all tab buttons
+                    var tabButtons = document.getElementsByClassName("tab-button");
+                    for (var i = 0; i < tabButtons.length; i++) {
+                        tabButtons[i].classList.remove("active");
+                    }
+
+                    // Show the selected tab content and mark button as active
+                    document.getElementById(tabName).classList.add("active");
+                    evt.currentTarget.classList.add("active");
+                }
+                </script>
+
+                <!-- CSS for styling the tabs -->
+                <style>
+                .tabs-container {
+                    width: 100%;
+                }
+
+                .tab-navigation {
+                    display: flex;
+                    border-bottom: 1px solid #ccc;
+                    margin-bottom: 15px;
+                }
+
+                .tab-button {
+                    background-color: #f1f1f1;
+                    border: 1px solid #ccc;
+                    border-bottom: none;
+                    padding: 10px 15px;
+                    cursor: pointer;
+                    margin-right: 5px;
+                    border-radius: 5px 5px 0 0;
+                    outline: none;
+                }
+
+                .tab-button:hover {
+                    background-color: #ddd;
+                }
+
+                .tab-button.active {
+                    background-color: #fff;
+                    border-bottom: 1px solid white;
+                    margin-bottom: -1px;
+                }
+
+                .tab-content {
+                    display: none;
+                    padding: 15px;
+                    border: 1px solid #ccc;
+                    border-top: none;
+                    border-radius: 0 0 5px 5px;
+                }
+
+                .tab-content.active {
+                    display: block;
+                }
+
+                .summary-item {
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    background-color: #f9f9f9;
+                    border-radius: 5px;
+                    border-left: 3px solid #2c3e50;
+                }
+
+                .source-link {
+                    color: #3498db;
+                    margin-left: 5px;
+                    text-decoration: none;
+                    font-weight: bold;
+                }
+
+                .relevance-score {
+                    font-size: 0.9em;
+                    color: #7f8c8d;
+                    margin-left: 10px;
+                }
+                </style>
                  
 				<div style="clear: both;"></div>
 
@@ -391,6 +532,29 @@
 					<button type="hidden" value="" style="display: none;"></button>
 				</form>
 			</div>
+            <div style="margin-top: 20px; clear: both;">
+                <div class="card mb-4">
+                  <div class="card-header">
+                    <h5>Filter by Publication Date</h5>
+                  </div>
+                  <div class="card-body">
+                    <form action="{{ url_for('filter_by_date') }}" method="get" class="form-inline">
+                      <div class="form-group mr-2">
+                        <label for="start_date" class="mr-2">From:</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ start_date }}">
+                      </div>
+                      <div class="form-group mr-2">
+                        <label for="end_date" class="mr-2">To:</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ end_date }}">
+                      </div>
+                      <button type="submit" class="btn btn-primary mr-2">Apply Filter</button>
+                      <a href="{{ url_for('clear_date_filter') }}" class="btn btn-secondary">Clear</a>
+                    </form>
+                  </div>
+                </div>
+            </div>
 
 
 			{% for doc in display_results %}
