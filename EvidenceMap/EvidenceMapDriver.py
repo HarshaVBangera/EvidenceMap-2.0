@@ -272,206 +272,216 @@ class EvidenceMapDriver(ABC):
 
         return json_root
 
-    def build_map(self, all_model_predictions, proposed_arms=None, print_output=False):
-        all_evidence_maps = []
+    def build_map(self, model_predictions, proposed_arms=None, print_output=False):
+        EvidenceMap = NodeSpace()
+        Root_nodes = [EvidenceMap.get_node_by_label("Participants", "Root", "Root"),
+                      EvidenceMap.get_node_by_label("Design", "Root", "Root"),
+                      EvidenceMap.get_node_by_label("Results", "Root", "Root")]
+        # Attempt to infer the design of the study.  Properly format abstracts usually describe the case study first.
+        Observation_Arms = None
+        Outcome_Arms = None
+        Design_Chains = []
+        NodeLabels = {
+            "Participant": ["Participant", "Participant_D"],
+            "Intervention": ["Intervention", "Intervention_D"],
+            "Observation": ["Observation", "Observation_D"],
+            "Outcome": ["Outcome", "Outcome_D"],
+            "Count": ["Count", "Count_D"]
+        }
+        results_sections = [
+            'RESULTS',
+            'CONCLUSIONS',
+            'CONCLUSION',
+            'FINDINGS',
+            'INTERPRETATION'
+        ]
+        if print_output:
+            print("Propositions found:")
+        for prediction in model_predictions:
+            NodeLabelFlag = int(prediction['tag'] not in results_sections)
+            for entity in prediction['entities']:
+                if entity['type'] == 'Participant':
+                    Participant_node = EvidenceMap.get_node_by_label("Participant", entity['text'], entity['cluster'])
+                    if entity['negation_status'] == 'negated':
+                        Participant_node.negation = True
+                    Root_nodes[0].add_child(Participant_node)
+                if proposed_arms is None and entity['type'] == 'Intervention':
+                    if prediction['tag'] not in results_sections:
+                        Intervention_nodes = EvidenceMap.get_nodes_by_label("Intervention_D", entity['text'],
+                                                                            entity['cluster'])
+                        for Intervention_node in Intervention_nodes:
+                            Root_nodes[1].add_child(Intervention_node)
+                if entity['type'] == 'Observation':
+                    if prediction['tag'] not in results_sections:
+                        if Observation_Arms is None:
+                            Observation_Arms = []
+                        Observation_Arms.append(
+                            EvidenceMap.get_nodes_by_label("Observation_D", entity['text'], entity['cluster'])[0])
+                if entity['type'] == 'Outcome':
+                    if prediction['tag'] not in results_sections:
+                        if Outcome_Arms is None:
+                            Outcome_Arms = []
+                        Outcome_Arms.append(
+                            EvidenceMap.get_nodes_by_label("Outcome_D", entity['text'], entity['cluster'])[0])
 
-        for model_predictions in all_model_predictions:
-            EvidenceMap = NodeSpace()
-            Root_nodes = [
-                EvidenceMap.get_node_by_label("Participants", "Root", "Root"),
-                EvidenceMap.get_node_by_label("Design", "Root", "Root"),
-                EvidenceMap.get_node_by_label("Results", "Root", "Root"),
-            ]
-
-            # Initialize variables for design arms
-            Observation_Arms = []
-            Outcome_Arms = []
-            Design_Chains = []
-            NodeLabels = {
-                "Participant": ["Participant", "Participant_D"],
-                "Intervention": ["Intervention", "Intervention_D"],
-                "Observation": ["Observation", "Observation_D"],
-                "Outcome": ["Outcome", "Outcome_D"],
-                "Count": ["Count", "Count_D"],
-            }
-
-            results_sections = [
-                'RESULTS',
-                'CONCLUSIONS',
-                'CONCLUSION',
-                'FINDINGS',
-                'INTERPRETATION',
-            ]
-
-            if print_output:
-                print("Propositions found:")
-
-            for prediction in model_predictions:
-                NodeLabelFlag = int(prediction['tag'] not in results_sections)
-                for entity in prediction['entities']:
-                    if entity['type'] == 'Participant':
-                        Participant_node = EvidenceMap.get_node_by_label("Participant", entity['text'], entity['cluster'])
-                        if entity['negation_status'] == 'negated':
-                            Participant_node.negation = True
-                        Root_nodes[0].add_child(Participant_node)
-
-                    if proposed_arms is None and entity['type'] == 'Intervention':
-                        if prediction['tag'] not in results_sections:
-                            Intervention_nodes = EvidenceMap.get_nodes_by_label("Intervention_D", entity['text'], entity['cluster'])
-                            for Intervention_node in Intervention_nodes:
-                                Root_nodes[1].add_child(Intervention_node)
-
-                    if entity['type'] == 'Observation':
-                        if prediction['tag'] not in results_sections:
-                            Observation_Arms.append(
-                                EvidenceMap.get_nodes_by_label("Observation_D", entity['text'], entity['cluster'])[0]
-                            )
-
-                    if entity['type'] == 'Outcome':
-                        if prediction['tag'] not in results_sections:
-                            Outcome_Arms.append(
-                                EvidenceMap.get_nodes_by_label("Outcome_D", entity['text'], entity['cluster'])[0]
-                            )
-
-                for proposition in prediction['propositions']:
-                    if proposition['Count'] is not None:
-                        middle = proposition['Count']['cluster_text']
-                    else:
-                        middle = proposition['Observation']['cluster_text']
-
-                    if isinstance(proposition['Intervention'], list):
+            for proposition in prediction['propositions']:
+                if proposition['Count'] is not None:
+                    middle = proposition['Count']['cluster_text']
+                else:
+                    middle = proposition['Observation']['cluster_text']
+                if isinstance(proposition['Intervention'], list):
+                    try:
                         for intervention in proposition['Intervention']:
                             if print_output:
-                                print(f"{intervention['cluster_text']}→{middle}→{proposition['Outcome']['cluster_text']}")
-                    else:
-                        if print_output:
-                            try:
-                                print(f"{proposition['Intervention']['cluster_text']}→{middle}→{proposition['Outcome']['cluster_text']}")
-                            except KeyError:
-                                pass  # Handle specific key errors
+                                print(
+                                    f"{intervention['cluster_text']}{middle}{proposition['Outcome']['cluster_text']}")
+                    except:
+                        # The proposition change is incomplete, so we will ignore it.
+                        continue
+                else:
+                    if print_output:
+                        try:
+                            print(
+                                f"{proposition['Intervention']['cluster_text']}{middle}{proposition['Outcome']['cluster_text']}")
+                        except:
+                            pass
+                if proposition['Observation'] is not None:
+                    Observation_node = EvidenceMap.get_nodes_by_label(NodeLabels['Observation'][NodeLabelFlag],
+                                                                      proposition['Observation']['cluster_text'],
+                                                                      proposition['Observation']['cluster'])[0]
+                else:
+                    Observation_node = None
+                if proposition['Count'] is not None:
+                    Count_node = \
+                    EvidenceMap.get_nodes_by_label(NodeLabels['Count'][NodeLabelFlag], proposition['Count']['text'],
+                                                   proposition['Count']['cluster'])[0]
+                else:
+                    Count_node = None
+                if proposition['Outcome'] is not None:
+                    Outcome_node = \
+                    EvidenceMap.get_nodes_by_label(NodeLabels['Outcome'][NodeLabelFlag], proposition['Outcome']['text'],
+                                                   proposition['Outcome']['cluster'])[0]
+                else:
+                    Outcome_node = None
 
-                    # Process nodes
-                    Observation_node = EvidenceMap.get_nodes_by_label(
-                        NodeLabels['Observation'][NodeLabelFlag],
-                        proposition['Observation']['cluster_text'],
-                        proposition['Observation']['cluster']
-                    )[0] if proposition['Observation'] is not None else None
-                    
-                    Count_node = EvidenceMap.get_nodes_by_label(
-                        NodeLabels['Count'][NodeLabelFlag], 
-                        proposition['Count']['text'],
-                        proposition['Count']['cluster']
-                    )[0] if proposition['Count'] is not None else None
-                    
-                    Outcome_node = EvidenceMap.get_nodes_by_label(
-                        NodeLabels['Outcome'][NodeLabelFlag], 
-                        proposition['Outcome']['text'],
-                        proposition['Outcome']['cluster']
-                    )[0] if proposition['Outcome'] is not None else None
+                middle_node = None
+                if Observation_node is not None and Outcome_node is not None:
+                    Outcome_node.add_parent(Observation_node)
+                    middle_node = Observation_node
+                elif Count_node is not None and Outcome_node is not None:
+                    Outcome_node.add_parent(Count_node)
+                    middle_node = Count_node
 
-                    middle_node = None
-                    if Observation_node and Outcome_node:
-                        Outcome_node.add_parent(Observation_node)
-                        middle_node = Observation_node
-                    elif Count_node and Outcome_node:
-                        Outcome_node.add_parent(Count_node)
-                        middle_node = Count_node
-
-                    # Process interventions
-                    if isinstance(proposition['Intervention'], list):
-                        for intervention in proposition['Intervention']:
-                            I_nodes = EvidenceMap.get_nodes_by_label("Intervention", intervention['text'], intervention['cluster'])
+                if isinstance(proposition['Intervention'], list):
+                    for intervention in proposition['Intervention']:
+                        I_nodes = EvidenceMap.get_nodes_by_label("Intervention", intervention['text'],
+                                                                 intervention['cluster'])
+                        try:
+                            cluster_pointer = intervention['cluster'].get_cluster_ids(intervention['text'], True)
+                        except:
+                            cluster_pointer = [intervention['cluster']]
+                        if proposed_arms is not None and any(pointer in proposed_arms for pointer in cluster_pointer):
+                            D_nodes = EvidenceMap.get_nodes_by_label("Intervention_D", intervention['text'],
+                                                                     intervention['cluster'])
+                            for D_node in D_nodes:
+                                Root_nodes[1].add_child(D_node)
+                        if middle_node is not None:
                             for I_node in I_nodes:
                                 Root_nodes[2].add_child(I_node)
-                                if prediction['tag'] in results_sections and middle_node:
+                                if prediction['tag'] in results_sections:
                                     middle_node.add_parent(I_node)
                                 else:
                                     Design_Chains.append(middle_node)
-                    else:
-                        I_nodes = EvidenceMap.get_nodes_by_label("Intervention", proposition['Intervention']['text'], proposition['Intervention']['cluster'])
+                else:
+                    try:
+                        I_nodes = EvidenceMap.get_nodes_by_label("Intervention", proposition['Intervention']['text'],
+                                                                 proposition['Intervention']['cluster'])
+                    except:
+                        continue
+                    try:
+                        cluster_pointer = proposition['Intervention']['cluster'].get_cluster_ids(
+                            proposition['Intervention']['text'], True)
+                    except:
+                        cluster_pointer = [proposition['Intervention']['cluster']]
+                    if proposed_arms is not None and any(pointer in proposed_arms for pointer in cluster_pointer):
+                        D_nodes = EvidenceMap.get_nodes_by_label("Intervention_D", proposition['Intervention']['text'],
+                                                                 proposition['Intervention']['cluster'])
+                        for D_node in D_nodes:
+                            Root_nodes[1].add_child(D_node)
+                    if middle_node is not None:
                         for I_node in I_nodes:
                             Root_nodes[2].add_child(I_node)
-                            if prediction['tag'] in results_sections and middle_node:
+                            if prediction['tag'] in results_sections:
                                 middle_node.add_parent(I_node)
                             else:
                                 Design_Chains.append(middle_node)
 
-            # Process Design Chains and finalize the Evidence Map
-            if Design_Chains:
-                for chain in Design_Chains:
-                    for child in Root_nodes[1].children:
-                        child.add_child(chain)
-            else:
-                if Outcome_Arms and not Observation_Arms:
-                    Observation_Arm = EvidenceMap.get_node_by_label("Observation_D", "Compare", "O")
+        if Design_Chains:
+            for chain in Design_Chains:
+                for child in Root_nodes[1].children:
+                    child.add_child(chain)
+        else:
+            if Outcome_Arms is not None and Observation_Arms is None:
+                Observation_Arm = EvidenceMap.get_node_by_label("Observation_D", "Compare", "O")
+                for Outcome_Arm in Outcome_Arms:
+                    Outcome_Arm.add_parent(Observation_Arm)
+                for child in Root_nodes[1].children:
+                    child.add_child(Observation_Arm)
+            if Observation_Arms is not None and Outcome_Arms is not None:
+                for Observation_Arm in Observation_Arms:
                     for Outcome_Arm in Outcome_Arms:
-                        Outcome_Arm.add_parent(Observation_Arm)
-                    for child in Root_nodes[1].children:
-                        child.add_child(Observation_Arm)
-                if Observation_Arms and Outcome_Arms:
-                    for Observation_Arm in Observation_Arms:
-                        for Outcome_Arm in Outcome_Arms:
-                            for child in Root_nodes[1].children:
-                                child.add_child(Observation_Arm)
-                                Observation_Arm.add_child(Outcome_Arm)
-                else:
-                    Root_nodes[1].children = set()
+                        for child in Root_nodes[1].children:
+                            child.add_child(Observation_Arm)
+                            Observation_Arm.add_child(Outcome_Arm)
+            else:
+                # Insufficient information to map a study design, so we leave it blank.
+                Root_nodes[1].children = set()
 
-            # Remove any intervention that doesn't have any children
-            for child in list(Root_nodes[2].children):
-                if not child.children:
-                    Root_nodes[2].children.discard(child)
+        # Remove any intervention that doesn't have any children
+        for child in list(Root_nodes[2].children):
+            if not child.children:
+                Root_nodes[2].children.discard(child)
 
-            # Store the evidence map for the current document
-            all_evidence_maps.append((Root_nodes, EvidenceMap))
-
-        return all_evidence_maps
-
+        return Root_nodes, EvidenceMap
 
     def _get_additional_elements(self):
         return {}
 
-    def draw_map(self, map_roots, map_title="Evidence Map", output_dir=None):
-    # Ensure map_roots is a list for multiple document handling
-        if not isinstance(map_roots, list):
-            map_roots = [map_roots]  # Wrap single map_root in a list
+    def draw_map(self, map_root, map_title="Evidence Map", output_dir=None):
+        dot = graphviz.Digraph(comment=map_title, format='svg')
+        dot.attr(rankdir='TB')
 
-        for index, map_root in enumerate(map_roots):
-            dot = graphviz.Digraph(comment=f"{map_title} - Document {index + 1}", format='svg')
-            dot.attr(rankdir='TB')
+        node_colors = {
+            'Intervention': self.driver_config.get('intervention_color', '#C5E0B5'),
+            'Intervention_D': self.driver_config.get('intervention_color', '#C5E0B5'),
+            'Count': self.driver_config.get('count_color', '#D9D9D9'),
+            'Observation': self.driver_config.get('observation_color', '#D9D9D9'),
+            'Observation_D': self.driver_config.get('observation_color', '#D9D9D9'),
+            'Outcome': self.driver_config.get('outcome_color', '#FFD962'),
+            'Outcome_D': self.driver_config.get('outcome_color', '#FFD962'),
+            'Participant': self.driver_config.get('participant_color', '#A1C2E1'),
+        }
+        edges = set()
 
-            node_colors = {
-                'Intervention': self.driver_config.get('intervention_color', '#C5E0B5'),
-                'Intervention_D': self.driver_config.get('intervention_color', '#C5E0B5'),
-                'Count': self.driver_config.get('count_color', '#D9D9D9'),
-                'Observation': self.driver_config.get('observation_color', '#D9D9D9'),
-                'Observation_D': self.driver_config.get('observation_color', '#D9D9D9'),
-                'Outcome': self.driver_config.get('outcome_color', '#FFD962'),
-                'Outcome_D': self.driver_config.get('outcome_color', '#FFD962'),
-                'Participant': self.driver_config.get('participant_color', '#A1C2E1'),
-            }
-            edges = set()
+        def add_node(node):
+            color = node_colors.get(node.entity_type, '#A1C2E1')
+            dot.node(str(hash(node)), str(node), shape='rectangle', style='filled', fillcolor=color, color='none')
 
-            def add_node(node):
-                color = node_colors.get(node.entity_type, '#A1C2E1')
-                dot.node(str(hash(node)), str(node), shape='rectangle', style='filled', fillcolor=color, color='none')
+        def draw_edges(node, recurse=False):
+            if str(node) != "Root" and not recurse:
+                add_node(node)
+            for child in node.children:
+                add_node(child)
+                edge = (node, child)
+                if str(node) != "Root" and recurse and edge not in edges:
+                    dot.edge(str(hash(node)), str(hash(child)))
+                    edges.add(edge)
+                draw_edges(child, True)
 
-            def draw_edges(node, recurse=False):
-                if str(node) != "Root" and not recurse:
-                    add_node(node)
-                for child in node.children:
-                    add_node(child)
-                    edge = (node, child)
-                    if str(node) != "Root" and recurse and edge not in edges:
-                        dot.edge(str(hash(node)), str(hash(child)))
-                        edges.add(edge)
-                    draw_edges(child, True)
+        draw_edges(map_root)
 
-            draw_edges(map_root)
-
-            # Create a unique output file path for each document's evidence map
-            output_file_path = os.path.join(output_dir, f"{map_title.replace(' ', '_')}_Document_{index + 1}")
-            dot.render(output_file_path, format='svg', cleanup=True)
+        output_file_path = os.path.join(output_dir, map_title)
+        dot.render(output_file_path, format='svg', cleanup=True)
 
     @abstractmethod
     def fit_propositions(self, model_predictions, print_output=False):
